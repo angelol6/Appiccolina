@@ -1,4 +1,6 @@
-const CACHE_NAME = 'appiccolina-v14';
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
+const CACHE_NAME = 'appiccolina-v15';
 
 // Installa e forza l'attivazione immediata
 self.addEventListener('install', (event) => {
@@ -33,6 +35,9 @@ self.addEventListener('activate', (event) => {
 
 // Intercetta le richieste: network-first per HTML/JS, cache-first per asset
 self.addEventListener('fetch', (event) => {
+    // Non intercettare chiamate API (POST, PUT, ecc) o estensioni Chrome
+    if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
+
     const url = new URL(event.request.url);
     const isAsset = /\.(png|jpg|jpeg|gif|svg|ico|webp|woff2?)$/i.test(url.pathname);
     
