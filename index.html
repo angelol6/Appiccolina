@@ -410,7 +410,13 @@
         async function inviaNotificaPush(partner, messaggio) {
             if (!ONE_SIGNAL_APP_ID || ONE_SIGNAL_APP_ID.length <= 20 || ONE_SIGNAL_APP_ID === 'APP_ID_ONESIGNAL') return;
             var hdrs = { 'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Bearer ' + ONE_SIGNAL_API_KEY };
-            var corpo = { app_id: ONE_SIGNAL_APP_ID, target_channel: 'push', headings: { en: 'Appiccolina', it: 'Appiccolina' }, contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio } };
+            var corpo = { 
+                app_id: ONE_SIGNAL_APP_ID, 
+                target_channel: 'push', 
+                headings: { en: 'Appiccolina', it: 'Appiccolina' }, 
+                contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio },
+                url: 'https://angelol6.github.io/Appiccolina/'
+            };
             try {
                 var r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { include_aliases: { external_id: [partner] } })) });
                 var data = await r.json();
