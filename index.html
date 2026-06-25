@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Appiccolina</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./image_0.png">
+    <link rel="apple-touch-icon" href="./image_0.png">
+    <meta name="theme-color" content="#ffffff">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
+    <style>
+        :root {
+            --bg-color: radial-gradient(circle at center, #ffffff 0%, #f9f9fb 80%, #f0f0f3 100%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --simo-red: #ef0a1a;
+            --angelo-blue: #0081ff;
+            --union-gradient: linear-gradient(135deg, #ef0a1a 0%, #0081ff 100%);
+            --text-main: #1d1d1f;
+            --text-gray: #6e6e73; 
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.03);
+            --nav-height: 80px;
+
+            --tab-1-color: #ef0a1a; --tab-2-color: #c01e52; --tab-3-color: #92318b; --tab-4-color: #6345c3; --tab-5-color: #0081ff; 
+        }
+
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-weight: 200; background: var(--bg-color); background-size: cover; height: 100vh; color: var(--text-main); overflow: hidden; letter-spacing: -0.2px; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+        * { outline: none; -webkit-tap-highlight-color: transparent; }
+        .gradient-text { background: var(--union-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
+        .grad-step-1 { background: linear-gradient(135deg, #ef0a1a 0%, #b92b66 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .grad-step-2 { background: linear-gradient(135deg, #b92b66 0%, #5a55b3 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .grad-step-3 { background: linear-gradient(135deg, #5a55b3 0%, #0081ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        #login-screen { height: 100vh; display: flex; justify-content: center; align-items: center; transition: opacity 0.5s ease, transform 0.5s ease; }
+        .login-container { background: var(--glass-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 32px; padding: 40px 25px; width: 75%; max-width: 280px; text-align: center; box-shadow: var(--shadow-soft); border: 1px solid rgba(255, 255, 255, 1); }
+        .heart-image { width: 115px; height: auto; margin-bottom: 5px; animation: gentle-pulse-scale 2s infinite ease-in-out; transform-origin: center; }
+        .login-container p { font-size: 21px; color: var(--text-gray); margin-top: 0; margin-bottom: 40px; font-weight: 200; }
+        .btn-user { background: rgba(255, 255, 255, 0.9); border: 1px solid transparent; border-radius: 20px; padding: 16px; width: 100%; font-size: 17px; font-weight: 400; margin-bottom: 16px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.01); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-user:active { transform: scale(0.97); }
+        .btn-simo { color: var(--simo-red); border-color: rgba(239, 10, 26, 0.15); }
+        .btn-angelo { color: var(--angelo-blue); border-color: rgba(0, 129, 255, 0.15); }
+        @keyframes gentle-pulse-scale { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        #main-app { height: 100vh; display: none; flex-direction: column; opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .header { padding: 35px 25px 15px 25px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; display: flex; align-items: center; line-height: 1; }
+        .greeting-base { color: var(--text-gray); font-weight: 300; }
+        .greeting-name { font-weight: 600; }
+        #greeting-heart { cursor: pointer; display: inline-flex; align-items: center; transition: transform 0.2s; }
+        #greeting-heart:active { transform: scale(0.9); }
+        .user-avatar { position: relative; width: 42px; height: 42px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 600; font-size: 22px; line-height: 1; z-index: 1; cursor: pointer; transition: transform 0.2s, color 0.2s; }
+        .user-avatar:active { transform: scale(0.9); }
+        .user-avatar::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; background: var(--union-gradient); filter: blur(4px); z-index: -2; opacity: 0.9; }
+        .user-avatar::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background-color: #ffffff; background-image: var(--profile-pic, none); background-size: cover; background-position: center; z-index: -1; transition: opacity 0.2s; }
+        .user-avatar.has-photo { color: transparent !important; }
+        .content-area { flex: 1; padding: 10px 25px 20px 25px; overflow-y: auto; padding-bottom: calc(var(--nav-height) + 30px); position: relative; }
+        .view-section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section-title { margin-bottom: 15px; height: 32px; cursor: pointer; outline: none;}
+
+        .widget-grid { display: flex; flex-direction: column; gap: 15px; }
+        .widget { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 22px; padding: 20px; border: 1px solid var(--glass-border); box-shadow: var(--shadow-soft); }
+        .widget-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .widget h3 { margin: 0 0 15px 0; font-size: 16px; color: var(--text-gray); font-weight: 500; letter-spacing: -0.2px; }
+        .widget-header-flex h3 { margin: 0; }
+        .btn-switch-timer { color: var(--text-gray); cursor: pointer; padding: 4px; border-radius: 50%; transition: background 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-switch-timer:active { background: rgba(0,0,0,0.05); }
+        .btn-switch-timer svg { width: 16px; height: 16px; }
+        .widget-quote { text-align: center; padding: 25px 20px; background: rgba(255,255,255,0.9); }
+        .quote-text { font-size: 22px; font-weight: 500; margin: 0; color: var(--text-main); }
+        .quote-author { font-size: 13px; color: var(--text-gray); margin-top: 8px; display: block; }
+        .timer-display { display: flex; justify-content: space-between; align-items: center; }
+        .time-box { text-align: center; flex: 1; }
+        .time-number { font-size: 28px; font-weight: 600; display: block; margin-bottom: 2px; }
+        .time-label { font-size: 12px; color: var(--text-gray); text-transform: lowercase; }
+        .milestone-list { list-style: none; padding: 0; margin: 0; }
+        .milestone-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .milestone-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .ms-info h4 { margin: 0; font-size: 15px; font-weight: 500; color: var(--text-main); }
+        .ms-info p { margin: 2px 0 0 0; font-size: 12px; color: var(--text-gray); }
+        .ms-days { font-size: 15px; font-weight: 600; }
+        .btn-add-date { width: 100%; padding: 12px; margin-top: 15px; background: rgba(0,0,0,0.02); border: 1px dashed rgba(0,0,0,0.12); border-radius: 14px; color: var(--text-gray); font-size: 14px; font-weight: 400; cursor: pointer; transition: all 0.2s; }
+        .btn-add-date:active { background: rgba(0,0,0,0.05); }
+        .btn-delete-date { width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,0.04); display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-gray); transition: background 0.2s, color 0.2s; flex-shrink: 0; }
+        .btn-delete-date:active { background: rgba(239, 10, 26, 0.15); color: var(--simo-red); }
+        .btn-delete-date svg { width: 14px; height: 14px; }
+        .widget-hint { background: linear-gradient(135deg, rgba(239, 10, 26, 0.06) 0%, rgba(0, 129, 255, 0.06) 100%); }
+        .widget-hint p { margin: 0; font-size: 14px; color: var(--text-gray); line-height: 1.4; display: flex; align-items: flex-start; gap: 10px; }
+        .hint-icon { width: 18px; height: 18px; stroke: currentColor; flex-shrink: 0; margin-top: 1px; }
+        .hint-title { font-weight: 500; }
+
+        .love-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; position: relative; }
+        .love-instruction { font-size: 16px; color: var(--text-gray); margin-bottom: 40px; font-weight: 400; }
+        .btn-send-love { background: none; border: none; padding: 0; cursor: pointer; outline: none; transition: transform 0.1s; z-index: 10; display: flex; align-items: center; justify-content: center; }
+        .btn-send-love:active { transform: scale(0.92); }
+        .btn-send-love svg { width: 160px; height: 160px; filter: drop-shadow(0 15px 25px rgba(239, 10, 26, 0.25)); animation: gentle-pulse-scale 3s infinite ease-in-out; }
+        .floating-heart { position: fixed; bottom: -50px; font-size: 24px; z-index: 9999; pointer-events: none; animation: floatUp linear forwards; opacity: 0.9; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translateY(-120vh) scale(1.5) rotate(20deg); opacity: 0; } }
+
+        #magic-heart-container { position: fixed; top: 50%; width: 140px; height: 280px; transform: translateY(-50%); z-index: 10000; pointer-events: none; overflow: hidden; display: none; }
+        #magic-heart-container.show { display: block; pointer-events: auto; cursor: pointer; animation: heartbeatPulse 1.5s infinite ease-in-out; }
+        .magic-heart-svg { position: absolute; width: 280px; height: 280px; top: 0; fill: url(#icon-grad); }
+        .heart-simo { right: 0; } .heart-simo .magic-heart-svg { left: 0; }
+        .heart-angelo { left: 0; } .heart-angelo .magic-heart-svg { left: -140px; }
+        @keyframes heartbeatPulse { 0% { transform: translateY(-50%) scale(1); opacity: 0.8; } 15% { transform: translateY(-50%) scale(1.05); opacity: 1; } 30% { transform: translateY(-50%) scale(1); opacity: 0.8; } 45% { transform: translateY(-50%) scale(1.05); opacity: 1; } 60% { transform: translateY(-50%) scale(1); opacity: 0.8; } 100% { transform: translateY(-50%) scale(1); opacity: 0.8; } }
+
+        .roulette-wrapper { position: relative; width: 280px; height: 280px; margin: 30px auto; }
+        .roulette-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid var(--text-main); z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+        .roulette-gradient-bg { width: 100%; height: 100%; border-radius: 50%; background: var(--union-gradient); padding: 3px; box-sizing: border-box; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .roulette-wheel { width: 100%; height: 100%; border-radius: 50%; position: relative; overflow: hidden; transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1); background: transparent; }
+        .roulette-slice-text { position: absolute; top: calc(50% - 12px); left: 50%; width: 50%; height: 24px; transform-origin: 0% 50%; display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; box-sizing: border-box; font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; }
+        .roulette-center-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background: #ffffff; border-radius: 50%; z-index: 5; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: var(--text-main); box-shadow: 0 5px 20px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.1s; }
+        .roulette-center-btn:active { transform: translate(-50%, -50%) scale(0.95); }
+        .options-pills-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .option-pill { display: inline-flex; align-items: center; background: rgba(0,0,0,0.04); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; color: var(--text-main); border: 1px solid rgba(0,0,0,0.05); }
+        .option-pill-delete { margin-left: 8px; color: var(--text-gray); font-size: 14px; font-weight: bold; cursor: pointer; padding: 2px; }
+        .option-pill-delete:active { color: var(--simo-red); }
+        .add-option-row { display: flex; gap: 10px; } .add-option-row input { margin-bottom: 0; flex: 1; } .add-option-row button { width: 50px; flex: 0 0 auto; background: var(--union-gradient); color: #fff; }
+        .list-categories { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; -ms-overflow-style: none; scrollbar-width: none; }
+        .list-categories::-webkit-scrollbar { display: none; }
+        .list-category-btn { white-space: nowrap; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; background: rgba(0,0,0,0.04); color: var(--text-gray); border: 1px solid transparent; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; }
+        .list-category-btn.active { background: #ffffff; color: var(--text-main); border-color: rgba(0,0,0,0.1); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .list-category-delete { margin-left: 8px; color: var(--text-gray); font-size: 16px; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 50%; transition: color 0.2s, background 0.2s; }
+        .list-category-delete:active { color: var(--simo-red); background: rgba(239, 10, 26, 0.1); }
+        .list-item-outer { display: flex; flex-direction: column; width: 100%; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 12px 0; }
+        .list-item-outer:last-child { border-bottom: none; }
+        .list-item-wrapper { display: flex; align-items: center; justify-content: space-between; }
+        .list-item-left { display: flex; align-items: center; gap: 12px; flex: 1; cursor: pointer; }
+        .list-checkbox { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.15); box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .list-checkbox.checked { background: var(--union-gradient); border: 0; }
+        .list-checkbox svg { width: 12px; height: 12px; stroke: white; opacity: 0; transition: opacity 0.2s; }
+        .list-checkbox.checked svg { opacity: 1; }
+        .list-text { font-size: 15px; color: var(--text-main); transition: color 0.2s, opacity 0.2s; white-space: normal; word-wrap: break-word; line-height: 1.3; }
+        .list-text.checked { color: var(--text-gray); opacity: 0.5; }
+        .list-item-details { padding-left: 34px; font-size: 12px; color: var(--text-gray); margin-top: 6px; opacity: 0.7; }
+        .list-item-note { margin-top: 2px; font-style: italic; }
+        
+        #toast-notification { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); padding: 16px 24px; border-radius: 40px; z-index: 10000; display: flex; align-items: center; gap: 12px; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); width: 85%; max-width: 340px; }
+        #toast-notification.show { top: 50px; }
+        .toast-icon { font-size: 24px; }
+        .toast-content { text-align: left; }
+        .toast-title { margin: 0 0 2px 0; font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .toast-message { margin: 0; font-size: 13px; color: var(--text-gray); line-height: 1.3; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 999; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
+        .modal-card { background: rgba(255, 255, 255, 0.9); border-radius: 28px; padding: 25px; width: 80%; max-width: 310px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); border: 1px solid rgba(255,255,255,0.5); }
+        .photo-card { padding: 15px; max-width: 330px; }
+        .photo-card img { width: 100%; height: auto; max-height: 55vh; border-radius: 20px; object-fit: cover; display: block; }
+        .photo-caption { font-size: 20px; font-weight: 500; margin: 15px 0 5px 0; }
+        .modal-input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); border-radius: 12px; font-family: inherit; font-size: 15px; outline: none; }
+        .modal-input:focus { border-color: var(--angelo-blue); }
+        .modal-btn-row { display: flex; gap: 10px; margin-top: 5px; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
+        .coupon-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .coupon-tab-btn { flex: 1; padding: 10px 4px; text-align: center; border-radius: 14px; font-size: 13px; font-weight: 500; background: rgba(0,0,0,0.04); color: var(--text-gray); border: 1px solid transparent; transition: all 0.2s; cursor: pointer; }
+        .coupon-tab-btn.active { background: #ffffff; color: var(--text-main); border-color: rgba(0,0,0,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .coupon-list-container { display: none; flex-direction: column; gap: 15px; }
+        .coupon-list-container.active { display: flex; animation: fadeIn 0.3s ease; }
+        .coupon-card { position: relative; background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 20px; border: 1px solid var(--glass-border); box-shadow: var(--shadow-soft); overflow: hidden; }
+        .coupon-card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: var(--union-gradient); }
+        .coupon-title { margin: 0 0 8px 0; font-size: 17px; font-weight: 600; color: var(--text-main); }
+        .coupon-desc { margin: 0 0 15px 0; font-size: 14px; color: var(--text-gray); line-height: 1.4; }
+        .coupon-meta { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; font-style: italic; }
+        .coupon-status { font-size: 13px; font-weight: 500; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.05); }
+        .status-redeemed { color: #34c759; } 
+        .status-pending { color: var(--text-gray); }
+        .btn-riscatta { width: 100%; padding: 12px; background: var(--union-gradient); color: #fff; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+        .btn-riscatta:active { transform: scale(0.97); }
+        .btn-riscatta:disabled { background: rgba(0,0,0,0.1); color: var(--text-gray); cursor: not-allowed; }
+        .btn-elimina-coupon { width: 100%; padding: 12px; background: rgba(239, 10, 26, 0.1); color: var(--simo-red); border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+        .btn-elimina-coupon:active { transform: scale(0.97); background: rgba(239, 10, 26, 0.2); }
+        .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; height: var(--nav-height); background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 30px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); border: 1px solid var(--glass-border); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; cursor: pointer; flex: 1; height: 100%; opacity: 0.35; transform: scale(0.95); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-item.active { opacity: 1; transform: scale(1.05); }
+        .tab-1 { color: var(--tab-1-color); } .tab-2 { color: var(--tab-2-color); } .tab-3 { color: var(--tab-3-color); } .tab-4 { color: var(--tab-4-color); } .tab-5 { color: var(--tab-5-color); }
+        .nav-icon { width: 24px; height: 24px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <svg width="0" height="0" style="position:absolute;">
+        <defs>
+            <linearGradient id="combo-grad" x1="0" y1="0" x2="120" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ef0a1a" /><stop offset="100%" stop-color="#0081ff" /></linearGradient>
+            <linearGradient id="icon-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ef0a1a" /><stop offset="45%" stop-color="#ef0a1a" /><stop offset="100%" stop-color="#0081ff" /></linearGradient>
+        </defs>
+    </svg>
+
+    <div id="magic-heart-container" onclick="scatenaCuoriSincronizzati()">
+        <svg class="magic-heart-svg" viewBox="0 0 24 24" preserveAspectRatio="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </div>
+
+    <div id="toast-notification"><div class="toast-icon" id="toast-icon">❤️</div><div class="toast-content"><h4 class="toast-title">Notifica Inviata</h4><p class="toast-message" id="toast-message">Hai mandato tanto amore!</p></div></div>
+
+    <div id="modal-ee1" class="modal-overlay" onclick="chiudiModal('modal-ee1')"><div class="modal-card" onclick="event.stopPropagation()"><p id="ee1-text" style="font-size: 22px; font-weight: 500; margin: 10px 0;">Sei tu la mia Casa❤️</p></div></div>
+    <div id="modal-ee2" class="modal-overlay" onclick="chiudiModal('modal-ee2')"><div class="modal-card photo-card" onclick="event.stopPropagation()"><img src="foto_coppia.jpg" alt="Noi"><p id="ee2-text" class="photo-caption">Ti amoo❤️</p></div></div>
+    <div id="modal-alert" class="modal-overlay" onclick="chiudiModal('modal-alert')"><div class="modal-card" onclick="event.stopPropagation()"><p id="alert-text" style="font-size: 16px; font-weight: 400; color: var(--text-main); margin: 10px 0; line-height: 1.4;"></p></div></div>
+
+    <div id="modal-settings" class="modal-overlay" onclick="chiudiModal('modal-settings')">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0; margin-bottom:20px; font-size:18px; font-weight:500;">Impostazioni</h3>
+            <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.03); border-radius: 20px; margin-bottom: 20px;">
+                <div id="settings-avatar" class="user-avatar" style="width: 50px; height: 50px; font-size: 24px; pointer-events: none; flex-shrink: 0;">?</div>
+                <div style="text-align: left; flex: 1;">
+                    <div id="settings-username" style="font-size: 18px; font-weight: 600; color: var(--text-main);">Nome</div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button class="modal-btn" onclick="document.getElementById('profile-pic-upload').click()" style="padding: 6px 12px; font-size: 12px; background: rgba(0,0,0,0.05); color: var(--text-main); margin:0;">Cambia foto</button>
+                        <button class="modal-btn" onclick="rimuoviFotoProfilo()" style="padding: 6px 12px; font-size: 12px; background: rgba(239, 10, 26, 0.1); color: var(--simo-red); margin:0;">Rimuovi</button>
+                    </div>
+                </div>
+                <input type="file" id="profile-pic-upload" accept="image/*" style="display: none;" onchange="caricaFotoProfilo(event)">
+            </div>
+            <button class="modal-btn" onclick="esci()" style="width: 100%; background: rgba(0,0,0,0.05); color: var(--text-main); margin-bottom: 30px;">Logout</button>
+            <div style="font-size: 12px; color: #a1a1a6; line-height: 1.5;">&copy; 2026 Appiccolina<br>Da Angelo per Simo,<br>con tantissimo amore.</div>
+            <div class="modal-btn-row" style="margin-top: 20px;"><button class="modal-btn" onclick="chiudiModal('modal-settings')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Chiudi</button></div>
+        </div>
+    </div>
+    
+    <div id="modal-add-date" class="modal-overlay" onclick="chiudiModal('modal-add-date')">
+        <div class="modal-card" style="text-align: left;" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:18px; color: var(--text-gray); font-weight:500;">Nuovo traguardo</h3>
+            <input type="text" id="input-title" placeholder="Nome (es. 3000 Giorni)" class="modal-input">
+            <select id="input-type" class="modal-input" onchange="cambiaTipoInput()"><option value="data">Inserisci una Data specifica</option><option value="giorni">Calcola Giorni insieme</option></select>
+            <input type="date" id="input-date" class="modal-input">
+            <input type="number" id="input-days" class="modal-input" placeholder="Numero di giorni (es. 3000)" style="display:none;">
+            <div class="modal-btn-row"><button class="modal-btn" onclick="salvaNuovaData()" style="background: var(--union-gradient); color: white;">Salva</button><button class="modal-btn" onclick="chiudiModal('modal-add-date')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div>
+        </div>
+    </div>
+
+    <div id="modal-confirm-delete" class="modal-overlay" onclick="chiudiModal('modal-confirm-delete')"><div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()"><h3 style="margin-top:0; font-size:18px; font-weight:500;">Elimina traguardo</h3><p style="font-size:15px; color:var(--text-gray); margin-bottom:20px;">Sei sicuro di voler eliminare questa data?</p><div class="modal-btn-row"><button class="modal-btn" onclick="eseguiEliminazioneData()" style="background: var(--simo-red); color: white;">Elimina</button><button class="modal-btn" onclick="chiudiModal('modal-confirm-delete')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+    <div id="modal-add-list" class="modal-overlay" onclick="chiudiModal('modal-add-list')"><div class="modal-card" style="text-align: left;" onclick="event.stopPropagation()"><h3 style="margin-top:0; margin-bottom:15px; font-size:18px; color: var(--text-gray); font-weight:500;">Nuova Lista</h3><input type="text" id="input-new-list-name" placeholder="Es. Libri da leggere" class="modal-input"><div class="modal-btn-row"><button class="modal-btn" onclick="creaNuovaCategoriaLista()" style="background: var(--union-gradient); color: white;">Crea</button><button class="modal-btn" onclick="chiudiModal('modal-add-list')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+    <div id="modal-confirm-delete-entire-list" class="modal-overlay" onclick="chiudiModal('modal-confirm-delete-entire-list')"><div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()"><h3 style="margin-top:0; font-size:18px; font-weight:500;">Elimina Lista</h3><p style="font-size:15px; color:var(--text-gray); margin-bottom:20px;">Sei sicuro di voler eliminare questa intera lista e tutte le sue voci?</p><div class="modal-btn-row"><button class="modal-btn" onclick="eseguiEliminazioneInteraLista()" style="background: var(--simo-red); color: white;">Elimina</button><button class="modal-btn" onclick="chiudiModal('modal-confirm-delete-entire-list')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+    <div id="modal-confirm-delete-list" class="modal-overlay" onclick="chiudiModal('modal-confirm-delete-list')"><div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()"><h3 style="margin-top:0; font-size:18px; font-weight:500;">Elimina voce</h3><p style="font-size:15px; color:var(--text-gray); margin-bottom:20px;">Vuoi rimuovere questo elemento dalla lista?</p><div class="modal-btn-row"><button class="modal-btn" onclick="eseguiEliminazioneElementoLista()" style="background: var(--simo-red); color: white;">Elimina</button><button class="modal-btn" onclick="chiudiModal('modal-confirm-delete-list')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+    <div id="modal-complete-item" class="modal-overlay" onclick="chiudiModal('modal-complete-item')"><div class="modal-card" style="text-align: left;" onclick="event.stopPropagation()"><h3 style="margin-top:0; margin-bottom:15px; font-size:18px; color: var(--text-gray); font-weight:500;">Dettagli Completamento</h3><p style="margin:0 0 8px 0; font-size:13px; color:var(--text-main);">Quando lo hai fatto?</p><input type="date" id="complete-date" class="modal-input"><p style="margin:10px 0 8px 0; font-size:13px; color:var(--text-main);">Note (facoltative)</p><textarea id="complete-notes" class="modal-input" placeholder="Es. Bellissimo! Voto 9/10" style="resize:none; height:70px;"></textarea><div class="modal-btn-row"><button class="modal-btn" onclick="salvaCompletamentoElemento()" style="background: var(--union-gradient); color: white;">Fatto</button><button class="modal-btn" onclick="chiudiModal('modal-complete-item')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+    <div id="modal-add-coupon" class="modal-overlay" onclick="chiudiModal('modal-add-coupon')"><div class="modal-card" style="text-align: left;" onclick="event.stopPropagation()"><h3 style="margin-top:0; margin-bottom:15px; font-size:18px; font-weight:500;">Nuovo Coupon</h3><input type="text" id="coupon-title" class="modal-input" placeholder="Titolo del coupon"><textarea id="coupon-desc" class="modal-input" placeholder="Descrizione o regole..." style="resize:none; height:60px;"></textarea><p style="margin:5px 0; font-size:12px; color:var(--text-gray);">Inizio validità (opzionale):</p><input type="date" id="coupon-start" class="modal-input"><p style="margin:5px 0; font-size:12px; color:var(--text-gray);">Scadenza (opzionale):</p><input type="date" id="coupon-end" class="modal-input"><div class="modal-btn-row"><button class="modal-btn" onclick="salvaNuovoCoupon()" style="background: var(--union-gradient); color: white;">Crea</button><button class="modal-btn" onclick="chiudiModal('modal-add-coupon')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+    <div id="modal-confirm-delete-coupon" class="modal-overlay" onclick="chiudiModal('modal-confirm-delete-coupon')"><div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()"><h3 style="margin-top:0; font-size:18px; font-weight:500;">Elimina Coupon</h3><p style="font-size:15px; color:var(--text-gray); margin-bottom:20px;">Sei sicuro di voler ritirare questo coupon?</p><div class="modal-btn-row"><button class="modal-btn" onclick="eseguiEliminazioneCoupon()" style="background: var(--simo-red); color: white;">Elimina</button><button class="modal-btn" onclick="chiudiModal('modal-confirm-delete-coupon')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
+
+    <div id="login-screen">
+        <div class="login-container">
+            <img class="heart-image" src="logo_transparent.png" alt="Appiccolina Icon">
+            <p>Chi sei?</p>
+            <button class="btn-user btn-simo" onclick="accedi('Simo')">Sono Simo</button>
+            <button class="btn-user btn-angelo" onclick="accedi('Angelo')">Sono Angelo</button>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="header">
+            <h1 style="margin: 0; display: flex; align-items: center; line-height: 1;"><span id="greeting-text" class="greeting-base" style="margin-right: 10px;">Benvenuto,</span><span id="user-name" class="greeting-name">Nome</span><span id="greeting-heart" onclick="toggleMagicHeart()"></span></h1>
+            <div id="user-avatar" class="user-avatar" onclick="apriModal('modal-settings')">?</div>
+        </div>
+
+        <div class="content-area">
+            <div id="view-home" class="view-section active">
+                <div class="section-title clickable" id="easter-egg-1">
+                    <svg viewBox="0 0 140 32" width="140" height="32"><g stroke="url(#combo-grad)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 4)"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></g><text x="34" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#combo-grad)" stroke="none">Home</text></svg>
+                </div>
+                <div class="widget-grid">
+                    <div class="widget widget-quote" id="messaggio-orario-container"><p class="quote-text gradient-text" id="testo-messaggio">...</p><span class="quote-author" id="autore-messaggio">da Angelo</span></div>
+                    <div class="widget widget-timer" id="easter-egg-2">
+                        <div class="widget-header-flex"><h3>Insieme da</h3><div class="btn-switch-timer" onclick="toggleTimerView(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></div></div>
+                        <div class="timer-display"><div class="time-box"><span class="time-number grad-step-1" id="t-val-1">0</span><span class="time-label" id="t-lab-1">Anni</span></div><div class="time-box"><span class="time-number grad-step-2" id="t-val-2">0</span><span class="time-label" id="t-lab-2">Mesi</span></div><div class="time-box"><span class="time-number grad-step-3" id="t-val-3">0</span><span class="time-label" id="t-lab-3">Giorni</span></div></div>
+                    </div>
+                    <div class="widget widget-milestones" id="easter-egg-3">
+                        <h3>Prossimi Traguardi</h3><ul class="milestone-list" id="lista-traguardi-completa"></ul><button class="btn-add-date" onclick="apriAggiungiData(event)">+ Aggiungi una data</button>
+                    </div>
+                    <div class="widget widget-hint">
+                        <p><svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg><span><span class="hint-title">Segreto:</span> Esegui la giusta sequenza di tocchi nei posti giusti per sbloccare le sorprese nascoste.</span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="view-love" class="view-section">
+                <div class="section-title"><svg viewBox="0 0 140 32" width="140" height="32"><g stroke="url(#combo-grad)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 4)"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></g><text x="34" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#combo-grad)" stroke="none">Love</text></svg></div>
+                <div class="love-container"><p class="love-instruction" id="love-instruction-text">Tocca il cuore per mandare amore</p><button class="btn-send-love" onclick="inviaAmore()"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#icon-grad)"></path></svg></button></div>
+            </div>
+
+            <div id="view-roulette" class="view-section">
+                <div class="section-title"><svg viewBox="0 0 140 32" width="140" height="32"><g stroke="url(#combo-grad)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 4)"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20"></path><path d="M2 12h20"></path><path d="m4.93 4.93 14.14 14.14"></path><path d="m19.07 4.93-14.14 14.14"></path></g><text x="34" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#combo-grad)" stroke="none">Roulette</text></svg></div>
+                <div class="roulette-wrapper"><div class="roulette-pointer"></div><div class="roulette-gradient-bg"><div class="roulette-wheel" id="roulette-wheel"></div></div><div class="roulette-center-btn" onclick="giraRoulette()">SPIN</div></div>
+                <div class="widget"><h3>Opzioni in gioco</h3><div class="options-pills-container" id="roulette-options-container"></div><div class="add-option-row"><input type="text" id="nuova-opzione-roulette" class="modal-input" placeholder="Nuova idea"><button class="modal-btn" onclick="aggiungiOpzioneRoulette()">+</button></div></div>
+            </div>
+
+            <div id="view-list" class="view-section">
+                <div class="section-title"><svg viewBox="0 0 140 32" width="140" height="32"><g stroke="url(#combo-grad)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 4)"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><polyline points="3 6 4 7 6 5"></polyline><polyline points="3 12 4 13 6 11"></polyline><polyline points="3 18 4 19 6 17"></polyline></g><text x="34" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#combo-grad)" stroke="none">List</text></svg></div>
+                <div class="list-categories" id="list-categories-container"></div>
+                <div class="widget"><div class="add-option-row" style="margin-bottom: 15px;"><input type="text" id="nuovo-elemento-lista" class="modal-input" placeholder="Aggiungi alla lista..."><button class="modal-btn" onclick="aggiungiElementoLista()">+</button></div><ul class="milestone-list" id="contenitore-lista-attiva" style="margin-bottom:0;"></ul></div>
+            </div>
+
+            <div id="view-coupon" class="view-section">
+                <div class="section-title"><svg viewBox="0 0 140 32" width="140" height="32"><g stroke="url(#combo-grad)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 4)"><path d="M4 7h16v3a2 2 0 0 1 0 4v3H4v-3a2 2 0 0 1 0-4V7z"></path><line x1="12" y1="7" x2="12" y2="17" stroke-dasharray="2 2"></line></g><text x="34" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#combo-grad)" stroke="none">Coupon</text></svg></div>
+                <div class="coupon-tabs"><div class="coupon-tab-btn active" id="tab-riscattabili" onclick="cambiaVistaCoupon('riscattabili')">Da Riscattare</div><div class="coupon-tab-btn" id="tab-riscattati" onclick="cambiaVistaCoupon('riscattati')">Storico</div><div class="coupon-tab-btn" id="tab-creati" onclick="cambiaVistaCoupon('creati')">I Tuoi</div></div>
+                <div id="lista-coupon-riscattabili" class="coupon-list-container active"></div>
+                <div id="lista-coupon-riscattati" class="coupon-list-container"></div>
+                <div id="lista-coupon-creati" class="coupon-list-container"><button class="btn-add-date" onclick="apriModal('modal-add-coupon')" style="margin-top:0;">+ Crea nuovo coupon</button><div id="contenitore-miei-coupon" style="display:flex; flex-direction:column; gap:15px; margin-top:15px;"></div></div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item tab-1 active" onclick="cambiaTab(this, 'view-home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>Home</span></div>
+            <div class="nav-item tab-2" onclick="cambiaTab(this, 'view-love')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg><span>Love</span></div>
+            <div class="nav-item tab-3" onclick="cambiaTab(this, 'view-roulette')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v20"></path><path d="M2 12h20"></path><path d="m4.93 4.93 14.14 14.14"></path><path d="m19.07 4.93-14.14 14.14"></path></svg><span>Roulette</span></div>
+            <div class="nav-item tab-4" onclick="cambiaTab(this, 'view-list')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><polyline points="3 6 4 7 6 5"></polyline><polyline points="3 12 4 13 6 11"></polyline><polyline points="3 18 4 19 6 17"></polyline></svg><span>List</span></div>
+            <div class="nav-item tab-5" onclick="cambiaTab(this, 'view-coupon')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v3a2 2 0 0 1 0 4v3H4v-3a2 2 0 0 1 0-4V7z"></path><line x1="12" y1="7" x2="12" y2="17" stroke-dasharray="2 2"></line></svg><span>Coupon</span></div>
+        </div>
+    </div>
+
+    <script>
+        /* --- CONFIGURAZIONE CHIAVI SERVIZI CLOUD --- */
+        const { createClient } = supabase;
+        
+        // 1. INCOLLA QUI LE 2 CHIAVI DI SUPABASE (Tra i due apici singoli!)
+        const supabaseUrl = 'https://mpazqftpybimcckfapil.supabase.co'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wYXpxZnRweWJpbWNja2ZhcGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTY4MjgsImV4cCI6MjA5NzY3MjgyOH0.' + '9jCBpvbu360pGrz5k2yQKBSPhUZ_6gIL1UyTGCAbsfc';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        // 2. INCOLLA QUI LE 2 CHIAVI DI ONESIGNAL (Tra i due apici singoli!)
+        const ONE_SIGNAL_APP_ID = 'b6035a4c-4dbb-4357-94f5-2c6afa8aec51';
+        const ONE_SIGNAL_API_KEY = 'os_v2_app_' + 'wybvutcnxnbvpfhvfrvpvcxmkfd3ajomjmeutpmgsayrsinmorsfa4kxwti2t4cmskijctzphk2emuc2pax7vfyznq44zwfogcrnosa';
+
+        /* --- STATO GLOBALE APP --- */
+        let utenteAttuale = ''; let indiceDataDaEliminare = null; let isAlternateTimerView = false; let realTimeInterval;
+
+        /* --- SINCRONIZZAZIONE SUPABASE & MERGE INTELLIGENTE --- */
+        async function syncToSupabase(id, payload) {
+            try {
+                const { error } = await supabaseClient.from('app_data').upsert({ id, payload });
+                if (error) console.warn('[Sync] Errore per', id, error);
+            } catch (e) { console.warn('[Sync] Errore rete per', id, e); }
+        }
+
+        async function loadFromSupabase(id) {
+            try {
+                const { data, error } = await supabaseClient.from('app_data').select('payload').eq('id', id).single();
+                if (error && error.code !== 'PGRST116') console.warn('[Load] Errore per', id, error);
+                return data ? data.payload : null;
+            } catch (e) { console.warn('[Load] Errore rete per', id, e); return null; }
+        }
+
+        function mergeCoupons(local, remote) {
+            if (!remote || !remote.length) return local || [];
+            if (!local || !local.length) return remote;
+            const merged = [...remote];
+            local.forEach(lc => {
+                const ri = merged.findIndex(c => c.id === lc.id);
+                if (ri === -1) merged.push(lc);
+                else if (lc.isRedeemed && !merged[ri].isRedeemed) merged[ri] = Object.assign({}, merged[ri], lc);
+            });
+            return merged;
+        }
+
+        function mergeListe(local, remote) {
+            if (!remote || !Object.keys(remote).length) return local || {};
+            if (!local || !Object.keys(local).length) return remote;
+            const merged = {};
+            const allKeys = new Set([...Object.keys(remote), ...Object.keys(local)]);
+            allKeys.forEach(key => {
+                const r = remote[key], l = local[key];
+                if (!r) { merged[key] = l; return; }
+                if (!l) { merged[key] = r; return; }
+                const mi = [...(r.items || [])];
+                (l.items || []).forEach(li => {
+                    const ei = mi.findIndex(i => i.testo === li.testo);
+                    if (ei === -1) mi.push(li);
+                    else if (li.checked && !mi[ei].checked) mi[ei] = li;
+                });
+                merged[key] = { titolo: r.titolo || l.titolo, items: mi };
+            });
+            return merged;
+        }
+
+        function mergeRoulette(local, remote) {
+            if (!remote || !remote.length) return local || [];
+            if (!local || !local.length) return remote;
+            return [...new Set([...remote, ...local])];
+        }
+
+        function mergeTraguardi(local, remote) {
+            if (!remote || !remote.length) return local || [];
+            if (!local || !local.length) return remote;
+            const merged = [...remote];
+            local.forEach(li => { if (!merged.some(r => r.titolo === li.titolo && r.data === li.data)) merged.push(li); });
+            return merged;
+        }
+
+        async function loadAllData() {
+            try {
+                const [rc, rl, rr, rt] = await Promise.all([
+                    loadFromSupabase('coupons'), loadFromSupabase('liste'),
+                    loadFromSupabase('roulette'), loadFromSupabase('traguardi')
+                ]);
+                if (rc) { couponsDati = mergeCoupons(couponsDati, rc.items || []); const _cj = JSON.stringify(couponsDati); localStorage.setItem('appiccolina_coupons', _cj); renderCoupons(); }
+                if (rl) { listeDati = mergeListe(listeDati, rl.data || {}); if (Object.keys(listeDati).length > 0 && !listeDati[categoriaListaAttiva]) categoriaListaAttiva = Object.keys(listeDati)[0]; const _lj = JSON.stringify(listeDati); localStorage.setItem('appiccolina_liste_v2', _lj); renderCategorieListe(); renderListaAttuale(); }
+                if (rr) { rouletteOpzioni = mergeRoulette(rouletteOpzioni, rr.options || []); const _rj = JSON.stringify(rouletteOpzioni); localStorage.setItem('appiccolina_roulette', _rj); disegnaRoulette(); disegnaPillole(); }
+                if (rt) { const lt = JSON.parse(localStorage.getItem('appiccolina_date') || '[]'); const mt = mergeTraguardi(lt, rt.items || []); const _tj = JSON.stringify(mt); localStorage.setItem('appiccolina_date', _tj); mostraTraguardiMisti(); }
+                if (!rc) await syncToSupabase('coupons', { items: couponsDati });
+                if (!rl) await syncToSupabase('liste', { data: listeDati });
+                if (!rr) await syncToSupabase('roulette', { options: rouletteOpzioni });
+                if (!rt) { const _t = JSON.parse(localStorage.getItem('appiccolina_date') || '[]'); if (_t.length) await syncToSupabase('traguardi', { items: _t }); }
+            } catch (e) { console.warn('[loadAllData] Errore, dati localStorage mantenuti', e); }
+        }
+
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && utenteAttuale) loadAllData(); });
+
+        function salvaCoupons() { localStorage.setItem('appiccolina_coupons', JSON.stringify(couponsDati)); syncToSupabase('coupons', { items: couponsDati }); }
+
+        async function inviaNotificaPush(partner, messaggio) {
+            if (!ONE_SIGNAL_APP_ID || ONE_SIGNAL_APP_ID.length <= 20 || ONE_SIGNAL_APP_ID === 'APP_ID_ONESIGNAL') return;
+            var hdrs = { 'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Bearer ' + ONE_SIGNAL_API_KEY };
+            var corpo = { app_id: ONE_SIGNAL_APP_ID, target_channel: 'push', headings: { en: 'Appiccolina', it: 'Appiccolina' }, contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio } };
+            try {
+                var r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { include_aliases: { external_id: [partner] } })) });
+                if (!r.ok) {
+                    console.warn('[Push] Aliases fallito (' + r.status + '), provo filters...');
+                    r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { filters: [{ field: 'tag', key: 'username', relation: '=', value: partner }] })) });
+                    if (!r.ok) console.warn('[Push] Anche filters fallito:', r.status);
+                }
+            } catch (err) { console.warn('[Push] Errore di rete:', err); }
+        }
+
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async function(OneSignal) {
+            if(ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
+                await OneSignal.init({ appId: ONE_SIGNAL_APP_ID, allowLocalhostAsSecureOrigin: true });
+            }
+        });
+
+        // Avvio automatico con controllo Login
+        window.addEventListener('load', () => {
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+            
+            const savedUser = localStorage.getItem('appiccolina_user');
+            if (savedUser) {
+                accedi(savedUser);
+            }
+        });
+
+        supabaseClient.channel('appiccolina-db').on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+              const record = payload.new;
+              if (record && record.id === 'magic_heart') toggleMagicHeart(true, record.payload.state);
+              if (record && record.id === 'heart_burst') {
+                  const lastBurst = localStorage.getItem('appiccolina_last_cloud_burst');
+                  if (lastBurst !== record.payload.timestamp.toString()) { localStorage.setItem('appiccolina_last_cloud_burst', record.payload.timestamp.toString()); creaCuoriciniVolanti(); }
+              }
+        }).subscribe();
+
+        // Listener Realtime per dati condivisi (Coupon, Liste, Roulette, Traguardi)
+        supabaseClient.channel('appiccolina-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+            const r = payload.new;
+            if (!r || !r.payload) return;
+            if (r.id === 'coupons') { couponsDati = r.payload.items || []; localStorage.setItem('appiccolina_coupons', JSON.stringify(couponsDati)); renderCoupons(); }
+            if (r.id === 'liste') { listeDati = r.payload.data || {}; if (Object.keys(listeDati).length > 0 && !listeDati[categoriaListaAttiva]) categoriaListaAttiva = Object.keys(listeDati)[0]; localStorage.setItem('appiccolina_liste_v2', JSON.stringify(listeDati)); renderCategorieListe(); renderListaAttuale(); }
+            if (r.id === 'roulette') { rouletteOpzioni = r.payload.options || []; localStorage.setItem('appiccolina_roulette', JSON.stringify(rouletteOpzioni)); disegnaRoulette(); disegnaPillole(); }
+            if (r.id === 'traguardi') { localStorage.setItem('appiccolina_date', JSON.stringify(r.payload.items || [])); mostraTraguardiMisti(); }
+        }).subscribe();
+
+        function aggiornaUIFotoProfilo() {
+            const avatarMain = document.getElementById('user-avatar'); const avatarSettings = document.getElementById('settings-avatar'); const fotoSalvata = localStorage.getItem('appiccolina_pic_' + utenteAttuale);
+            if (fotoSalvata) { const bgStyle = `url('${fotoSalvata}')`; avatarMain.style.setProperty('--profile-pic', bgStyle); avatarMain.classList.add('has-photo'); avatarSettings.style.setProperty('--profile-pic', bgStyle); avatarSettings.classList.add('has-photo'); } 
+            else { avatarMain.style.removeProperty('--profile-pic'); avatarMain.classList.remove('has-photo'); avatarSettings.style.removeProperty('--profile-pic'); avatarSettings.classList.remove('has-photo'); }
+        }
+
+        function caricaFotoProfilo(event) {
+            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image(); img.onload = function() {
+                    const canvas = document.createElement('canvas'); const maxSize = 300; let width = img.width, height = img.height;
+                    if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
+                    canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    try { localStorage.setItem('appiccolina_pic_' + utenteAttuale, dataUrl); aggiornaUIFotoProfilo(); } catch(err) { mostraAlertPersonalizzato("Errore salvataggio foto."); }
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(file); event.target.value = ''; 
+        }
+
+        function rimuoviFotoProfilo() { localStorage.removeItem('appiccolina_pic_' + utenteAttuale); aggiornaUIFotoProfilo(); }
+
+        async function accedi(nome) {
+            utenteAttuale = nome;
+            localStorage.setItem('appiccolina_user', nome);
+            
+            if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
+                window.OneSignalDeferred.push(async function(OneSignal) {
+                    try { await OneSignal.login(nome); await OneSignal.User.addTag("username", nome); await OneSignal.Notifications.requestPermission(); } catch (e) { console.log("Push bloccate:", e); }
+                });
+            }
+
+            const loginScreen = document.getElementById('login-screen'), mainApp = document.getElementById('main-app'), userNameSpan = document.getElementById('user-name'), avatar = document.getElementById('user-avatar'), ee1Testo = document.getElementById('ee1-text'), ee2Testo = document.getElementById('ee2-text'), loveInstruction = document.getElementById('love-instruction-text'), greetingText = document.getElementById('greeting-text'), greetingHeart = document.getElementById('greeting-heart'), settingsUsername = document.getElementById('settings-username'), settingsAvatar = document.getElementById('settings-avatar');
+            userNameSpan.innerText = nome; settingsUsername.innerText = nome; avatar.innerText = nome.charAt(0); settingsAvatar.innerText = nome.charAt(0);
+            const heartSvg = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none" style="margin-left: 10px; transform: translateY(1.5px);"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+
+            if(nome === 'Simo') {
+                userNameSpan.style.color = 'var(--simo-red)'; avatar.style.color = 'var(--simo-red)'; settingsUsername.style.color = 'var(--simo-red)'; settingsAvatar.style.color = 'var(--simo-red)'; ee1Testo.style.color = 'var(--simo-red)'; ee2Testo.style.color = 'var(--simo-red)'; loveInstruction.innerText = "Tocca il cuore per mandare amore ad Angelo"; greetingText.innerText = "Benvenuta,"; greetingHeart.innerHTML = heartSvg; greetingHeart.style.color = 'var(--simo-red)';
+            } else {
+                userNameSpan.style.color = 'var(--angelo-blue)'; avatar.style.color = 'var(--angelo-blue)'; settingsUsername.style.color = 'var(--angelo-blue)'; settingsAvatar.style.color = 'var(--angelo-blue)'; ee1Testo.style.color = 'var(--angelo-blue)'; ee2Testo.style.color = 'var(--angelo-blue)'; loveInstruction.innerText = "Tocca il cuore per mandare amore a Simo"; greetingText.innerText = "Benvenuto,"; greetingHeart.innerHTML = heartSvg; greetingHeart.style.color = 'var(--angelo-blue)';
+            }
+
+            aggiornaUIFotoProfilo(); document.getElementById('messaggio-orario-container').style.display = 'block'; impostaMessaggioOrario(nome); calcolaTempoTrascorso();
+            realTimeInterval = setInterval(() => { calcolaTempoTrascorso(); controllaTraguardiRaggiunti(); }, 60000);
+            mostraTraguardiMisti(); inizializzaRoulette(); inizializzaListe(); inizializzaCoupons(); controllaTraguardiRaggiunti(); loadAllData(); 
+
+            if (localStorage.getItem('appiccolina_magic_heart') === 'true') { toggleMagicHeart(true, true); }
+            loginScreen.style.opacity = '0'; loginScreen.style.transform = 'scale(0.95)';
+            setTimeout(() => { loginScreen.style.display = 'none'; mainApp.style.display = 'flex'; setTimeout(() => { mainApp.style.opacity = '1'; mainApp.style.transform = 'translateY(0)'; }, 50); }, 500); 
+        }
+        
+        function esci() {
+            localStorage.removeItem('appiccolina_user');
+            clearInterval(realTimeInterval); utenteAttuale = ''; chiudiModal('modal-settings');
+            const loginScreen = document.getElementById('login-screen'), mainApp = document.getElementById('main-app');
+            mainApp.style.opacity = '0'; mainApp.style.transform = 'translateY(20px)';
+            setTimeout(() => { mainApp.style.display = 'none'; loginScreen.style.display = 'flex'; setTimeout(() => { loginScreen.style.opacity = '1'; loginScreen.style.transform = 'scale(1)'; }, 50); }, 500);
+        }
+
+        /* --- POSTINO NETLIFY (SBLOCCO NOTIFICHE) --- */
+        let toastTimeout;
+        function inviaNotificaGenerica(messaggio) {
+            const partner = utenteAttuale === 'Simo' ? 'Angelo' : 'Simo';
+            
+            document.getElementById('toast-icon').innerText = '❤️'; document.getElementById('toast-message').innerText = `Notifica inviata a ${partner}: "${messaggio}"`;
+            const toast = document.getElementById('toast-notification'); toast.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
+            
+            if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
+                inviaNotificaPush(partner, messaggio);
+            }
+        }
+
+        let traguardiNotificatiOggi = [];
+        function controllaTraguardiRaggiunti() {
+            const oggi = new Date(); const dataOggiString = `${oggi.getFullYear()}-${oggi.getMonth()}-${oggi.getDate()}`; const unGiorno = 1000 * 60 * 60 * 24;
+            if (oggi.getDate() === 13 && oggi.getMonth() === 6) lanciaNotificaTraguardo("Anniversario", dataOggiString);
+            if (oggi.getDate() === 13 && oggi.getMonth() !== 6) lanciaNotificaTraguardo("Mesiversario", dataOggiString);
+            const dateSalvate = JSON.parse(localStorage.getItem('appiccolina_date')) || []; const oggiReset = new Date(); oggiReset.setHours(0,0,0,0);
+            dateSalvate.forEach(item => {
+                const dataTarget = new Date(item.data); dataTarget.setHours(0,0,0,0);
+                if (Math.ceil((dataTarget.getTime() - oggiReset.getTime()) / unGiorno) === 0) lanciaNotificaTraguardo(item.titolo, dataOggiString);
+            }); controllaCouponSbloccati();
+        }
+
+        function lanciaNotificaTraguardo(nomeTraguardo, dataOggiString) {
+            const traguardoID = nomeTraguardo + "_" + dataOggiString;
+            if (!traguardiNotificatiOggi.includes(traguardoID)) { traguardiNotificatiOggi.push(traguardoID); setTimeout(() => { inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`); }, 2000); }
+        }
+
+        function toggleMagicHeart(fromSync = false, forcedState = null) {
+            const heartContainer = document.getElementById('magic-heart-container'); const isActive = heartContainer.classList.contains('show'); const newState = forcedState !== null ? forcedState : !isActive;
+            if (newState) { if (utenteAttuale === 'Simo') heartContainer.className = 'heart-simo show'; else heartContainer.className = 'heart-angelo show'; } else { heartContainer.classList.remove('show'); heartContainer.className = ''; }
+            if (!fromSync) {
+                localStorage.setItem('appiccolina_magic_heart', newState ? 'true' : 'false');
+                supabaseClient.from('app_data').upsert({ id: 'magic_heart', payload: { state: newState } }).then(res => { if(res.error) console.log(res.error) });
+                if (newState) inviaNotificaGenerica("Ha attivato il Cuore Magico! Componilo subito ❤️");
+            }
+        }
+
+        function scatenaCuoriSincronizzati() {
+            creaCuoriciniVolanti(); const now = Date.now(); localStorage.setItem('appiccolina_magic_hearts_burst', now.toString()); localStorage.setItem('appiccolina_last_cloud_burst', now.toString());
+            supabaseClient.from('app_data').upsert({ id: 'heart_burst', payload: { timestamp: now } }).then(res => { if(res.error) console.log(res.error) });
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'appiccolina_magic_heart') toggleMagicHeart(true, e.newValue === 'true');
+            if (e.key === 'appiccolina_magic_hearts_burst') creaCuoriciniVolanti();
+            if (e.key === 'appiccolina_pic_' + utenteAttuale) aggiornaUIFotoProfilo();
+        });
+
+        function cambiaTab(elementoCliccato, idVistaDestinazione) {
+            const tabs = document.querySelectorAll('.nav-item'); tabs.forEach(tab => tab.classList.remove('active')); elementoCliccato.classList.add('active');
+            const sezioni = document.querySelectorAll('.view-section'); sezioni.forEach(sezione => { sezione.classList.remove('active'); }); document.getElementById(idVistaDestinazione).classList.add('active');
+        }
+
+        let couponsDati = []; let idCouponDaEliminare = null; let couponNotificatiOggi = [];
+        function inizializzaCoupons() { const salvati = localStorage.getItem('appiccolina_coupons'); if (salvati) couponsDati = JSON.parse(salvati); renderCoupons(); }
+        function cambiaVistaCoupon(vista) { ['riscattabili', 'riscattati', 'creati'].forEach(v => { document.getElementById('tab-' + v).classList.remove('active'); document.getElementById('lista-coupon-' + v).classList.remove('active'); }); document.getElementById('tab-' + vista).classList.add('active'); document.getElementById('lista-coupon-' + vista).classList.add('active'); }
+        function salvaNuovoCoupon() {
+            const title = document.getElementById('coupon-title').value.trim(), desc = document.getElementById('coupon-desc').value.trim(), start = document.getElementById('coupon-start').value, end = document.getElementById('coupon-end').value;
+            if (!title) { mostraAlertPersonalizzato("Inserisci almeno il titolo del coupon!"); return; }
+            couponsDati.push({ id: 'coup-' + Date.now(), creator: utenteAttuale, title: title, desc: desc, startDate: start || null, endDate: end || null, isRedeemed: false, isInfinite: false });
+            salvaCoupons();
+            document.getElementById('coupon-title').value = ''; document.getElementById('coupon-desc').value = ''; document.getElementById('coupon-start').value = ''; document.getElementById('coupon-end').value = '';
+            chiudiModal('modal-add-coupon'); renderCoupons(); inviaNotificaGenerica(`Ti ha regalato un nuovo Coupon: "${title}" 🎟️`);
+        }
+
+        function formattaDataItaliana(dataStringa) { if (!dataStringa) return ''; return new Date(dataStringa).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }); }
+
+        function renderCoupons() {
+            const containerRiscattabili = document.getElementById('lista-coupon-riscattabili'), containerRiscattati = document.getElementById('lista-coupon-riscattati'), containerCreati = document.getElementById('contenitore-miei-coupon');
+            containerRiscattabili.innerHTML = ''; containerRiscattati.innerHTML = ''; containerCreati.innerHTML = '';
+            const oggi = new Date(); oggi.setHours(0,0,0,0); let countRiscattabili = 0, countRiscattati = 0, countCreati = 0;
+
+            couponsDati.forEach(coupon => {
+                const card = document.createElement('div'); card.className = 'coupon-card';
+                let isValid = true, isExpired = false, dateText = "Valido sempre";
+                if (coupon.startDate) { const startDate = new Date(coupon.startDate); startDate.setHours(0,0,0,0); if (oggi < startDate) isValid = false; dateText = `Riscattabile dal ${formattaDataItaliana(coupon.startDate)}`; }
+                if (coupon.endDate) { const endDate = new Date(coupon.endDate); endDate.setHours(0,0,0,0); if (oggi > endDate) { isExpired = true; dateText = "Scaduto"; } else if (isValid) dateText = `Scade il ${formattaDataItaliana(coupon.endDate)}`; }
+                if (coupon.startDate && coupon.endDate) dateText = `Dal ${formattaDataItaliana(coupon.startDate)} al ${formattaDataItaliana(coupon.endDate)}`;
+
+                const baseHTML = `<h4 class="coupon-title">${coupon.title}</h4><p class="coupon-desc">${coupon.desc}</p><p class="coupon-meta">${dateText}</p>`;
+                if (coupon.creator === utenteAttuale) {
+                    countCreati++; let statusHTML = coupon.isRedeemed ? `<div class="coupon-status status-redeemed">✓ Riscattato dal partner</div>` : `<div class="coupon-status status-pending">In attesa di riscatto</div>`;
+                    card.innerHTML = baseHTML + statusHTML + `<button class="btn-elimina-coupon" style="margin-top:10px;" onclick="richiediConfermaEliminazioneCoupon('${coupon.id}')">Ritira Coupon</button>`; containerCreati.appendChild(card);
+                } else {
+                    if (coupon.isRedeemed && !coupon.isInfinite) { countRiscattati++; card.innerHTML = baseHTML + `<div class="coupon-status status-pending">✓ Già utilizzato</div>`; containerRiscattati.appendChild(card); }
+                    else if (isValid) { countRiscattabili++; let btnHTML = isExpired ? `<button class="btn-riscatta" disabled>Scaduto</button>` : (coupon.isRedeemed && coupon.isInfinite ? `<button class="btn-riscatta" onclick="riscattaCoupon('${coupon.id}')">Usa ancora</button>` : `<button class="btn-riscatta" onclick="riscattaCoupon('${coupon.id}')">Riscatta Ora</button>`); card.innerHTML = baseHTML + btnHTML; containerRiscattabili.appendChild(card); }
+                }
+            });
+            if (countRiscattabili === 0) containerRiscattabili.innerHTML = `<p style="text-align:center; color:var(--text-gray); font-size:14px;">Nessun coupon da riscattare al momento.</p>`;
+            if (countRiscattati === 0) containerRiscattati.innerHTML = `<p style="text-align:center; color:var(--text-gray); font-size:14px;">Nessuno storico presente.</p>`;
+            if (countCreati === 0) containerCreati.innerHTML = `<p style="text-align:center; color:var(--text-gray); font-size:14px;">Non hai creato coupon.</p>`;
+        }
+
+        function riscattaCoupon(id) {
+            const index = couponsDati.findIndex(c => c.id === id);
+            if (index !== -1) { if (!couponsDati[index].isInfinite) couponsDati[index].isRedeemed = true; salvaCoupons(); renderCoupons(); inviaNotificaGenerica(`Ha appena riscosso il tuo Coupon: "${couponsDati[index].title}"! 🎫`); scatenaCuoriSincronizzati(); }
+        }
+        function richiediConfermaEliminazioneCoupon(id) { idCouponDaEliminare = id; apriModal('modal-confirm-delete-coupon'); }
+        function eseguiEliminazioneCoupon() { if (idCouponDaEliminare) { couponsDati = couponsDati.filter(c => c.id !== idCouponDaEliminare); salvaCoupons(); renderCoupons(); idCouponDaEliminare = null; } chiudiModal('modal-confirm-delete-coupon'); }
+        function controllaCouponSbloccati() {
+            const oggi = new Date(); oggi.setHours(0,0,0,0); const dataOggiString = `${oggi.getFullYear()}-${oggi.getMonth()}-${oggi.getDate()}`;
+            couponsDati.forEach(coupon => { if (coupon.creator !== utenteAttuale && coupon.startDate && !coupon.isRedeemed) { const start = new Date(coupon.startDate); start.setHours(0,0,0,0); if (start.getTime() - oggi.getTime() === 0) { const couponID = coupon.id + "_" + dataOggiString; if (!couponNotificatiOggi.includes(couponID)) { couponNotificatiOggi.push(couponID); setTimeout(() => { inviaNotificaGenerica("Un nuovo Coupon regalo si è sbloccato oggi! 🎟️"); }, 4000); } } } });
+        }
+
+        let rouletteOpzioni = []; let currentRotation = 0; let isSpinning = false;
+        function inizializzaRoulette() { const salvate = localStorage.getItem('appiccolina_roulette'); rouletteOpzioni = salvate ? JSON.parse(salvate) : ["Sushi", "Pizza", "Film a casa", "Passeggiata", "Cuciniamo noi"]; disegnaRoulette(); disegnaPillole(); }
+        function disegnaRoulette() {
+            const ruota = document.getElementById('roulette-wheel'); ruota.innerHTML = ''; if (rouletteOpzioni.length === 0) { ruota.style.background = '#ffffff'; return; }
+            const svgNS = "http://www.w3.org/2000/svg", svg = document.createElementNS(svgNS, "svg"); svg.setAttribute("viewBox", "0 0 100 100"); svg.style.position = "absolute"; svg.style.top = "0"; svg.style.left = "0"; svg.style.width = "100%"; svg.style.height = "100%"; svg.style.zIndex = "1";
+            const defs = document.createElementNS(svgNS, "defs"), mask = document.createElementNS(svgNS, "mask"); mask.setAttribute("id", "slice-mask");
+            const maskBg = document.createElementNS(svgNS, "circle"); maskBg.setAttribute("cx", "50"); maskBg.setAttribute("cy", "50"); maskBg.setAttribute("r", "50"); maskBg.setAttribute("fill", "white"); mask.appendChild(maskBg);
+            const angoloFetta = 360 / rouletteOpzioni.length;
+            rouletteOpzioni.forEach((opzione, i) => { const rad = (i * angoloFetta * Math.PI) / 180; const x2 = 50 + 50 * Math.sin(rad), y2 = 50 - 50 * Math.cos(rad); const line = document.createElementNS(svgNS, "line"); line.setAttribute("x1", "50"); line.setAttribute("y1", "50"); line.setAttribute("x2", x2.toString()); line.setAttribute("y2", y2.toString()); line.setAttribute("stroke", "black"); line.setAttribute("stroke-width", "0.8"); mask.appendChild(line); });
+            defs.appendChild(mask); svg.appendChild(defs);
+            const wheelCircle = document.createElementNS(svgNS, "circle"); wheelCircle.setAttribute("cx", "50"); wheelCircle.setAttribute("cy", "50"); wheelCircle.setAttribute("r", "50"); wheelCircle.setAttribute("fill", "#ffffff"); wheelCircle.setAttribute("mask", "url(#slice-mask)"); svg.appendChild(wheelCircle); ruota.appendChild(svg);
+            rouletteOpzioni.forEach((opzione, i) => { const angoloMedio = (i * angoloFetta) + (angoloFetta / 2); const testoSlice = document.createElement('div'); testoSlice.className = 'roulette-slice-text'; testoSlice.style.transform = `rotate(${angoloMedio - 90}deg)`; testoSlice.style.zIndex = "2"; testoSlice.innerText = opzione; ruota.appendChild(testoSlice); });
+        }
+        function disegnaPillole() { const container = document.getElementById('roulette-options-container'); container.innerHTML = ''; rouletteOpzioni.forEach((opz, i) => { const pill = document.createElement('div'); pill.className = 'option-pill'; pill.innerHTML = `${opz} <span class="option-pill-delete" onclick="rimuoviOpzioneRoulette(${i})">×</span>`; container.appendChild(pill); }); }
+        function aggiungiOpzioneRoulette() { const input = document.getElementById('nuova-opzione-roulette'); const valore = input.value.trim(); if (valore !== "") { rouletteOpzioni.push(valore); salvaRoulette(); disegnaRoulette(); disegnaPillole(); input.value = ""; } }
+        function rimuoviOpzioneRoulette(indice) { if (rouletteOpzioni.length <= 2) { mostraAlertPersonalizzato("Servono almeno due opzioni!"); return; } rouletteOpzioni.splice(indice, 1); salvaRoulette(); disegnaRoulette(); disegnaPillole(); }
+        function salvaRoulette() { localStorage.setItem('appiccolina_roulette', JSON.stringify(rouletteOpzioni)); syncToSupabase('roulette', { options: rouletteOpzioni }); }
+        function giraRoulette() {
+            if (isSpinning || rouletteOpzioni.length < 2) return; isSpinning = true; const ruota = document.getElementById('roulette-wheel'); currentRotation += (1800 + Math.floor(Math.random() * 360)); ruota.style.transform = `rotate(${currentRotation}deg)`;
+            setTimeout(() => { const rotazioneFinale = currentRotation % 360; const vincitore = rouletteOpzioni[Math.floor(((360 - rotazioneFinale) % 360) / (360 / rouletteOpzioni.length))]; mostraAlertPersonalizzato(`Il fato ha deciso:<br><br><span style="font-size: 24px; font-weight: 600;" class="gradient-text">${vincitore}</span>`); inviaNotificaGenerica(`Ha girato la ruota e il fato ha scelto: "${vincitore}"! 🎰`); isSpinning = false; }, 4000);
+        }
+
+        let listeDati = {}; let categoriaListaAttiva = ''; let indiceElementoDaEliminare = null, indiceElementoDaCompletare = null, keyListaDaEliminare = null;
+        function inizializzaListe() { const salvate = localStorage.getItem('appiccolina_liste_v2'); if (salvate) { listeDati = JSON.parse(salvate); if (Object.keys(listeDati).length > 0) categoriaListaAttiva = Object.keys(listeDati)[0]; } else { listeDati = { 'cat-todo': { titolo: 'Cose da fare', items: [] }, 'cat-film': { titolo: 'Film & Serie TV', items: [] } }; categoriaListaAttiva = 'cat-todo'; } renderCategorieListe(); renderListaAttuale(); }
+        function renderCategorieListe() { const container = document.getElementById('list-categories-container'); container.innerHTML = ''; for (const key in listeDati) { const btn = document.createElement('div'); btn.className = `list-category-btn ${key === categoriaListaAttiva ? 'active' : ''}`; const t = document.createElement('span'); t.innerText = listeDati[key].titolo; btn.appendChild(t); const del = document.createElement('span'); del.innerHTML = '&times;'; del.className = 'list-category-delete'; del.onclick = (e) => richiediConfermaEliminazioneInteraLista(key, e); btn.appendChild(del); btn.onclick = (e) => { if (e.target !== del) cambiaCategoriaLista(key); }; container.appendChild(btn); } const addBtn = document.createElement('div'); addBtn.className = 'list-category-btn'; addBtn.innerHTML = '<strong>+</strong>'; addBtn.onclick = () => apriModal('modal-add-list'); container.appendChild(addBtn); }
+        function cambiaCategoriaLista(keyCategoria) { categoriaListaAttiva = keyCategoria; renderCategorieListe(); renderListaAttuale(); }
+        function creaNuovaCategoriaLista() { const input = document.getElementById('input-new-list-name'); const titolo = input.value.trim(); if (titolo !== "") { const newKey = 'cat-' + Date.now(); listeDati[newKey] = { titolo: titolo, items: [] }; salvaListe(); cambiaCategoriaLista(newKey); input.value = ''; chiudiModal('modal-add-list'); inviaNotificaGenerica(`Ha creato una nuova lista condivisa: "${titolo}" 📝`); } }
+        function richiediConfermaEliminazioneInteraLista(key, event) { event.stopPropagation(); keyListaDaEliminare = key; apriModal('modal-confirm-delete-entire-list'); }
+        function eseguiEliminazioneInteraLista() { if (keyListaDaEliminare) { delete listeDati[keyListaDaEliminare]; salvaListe(); if (categoriaListaAttiva === keyListaDaEliminare) { const keys = Object.keys(listeDati); categoriaListaAttiva = keys.length > 0 ? keys[0] : null; } keyListaDaEliminare = null; renderCategorieListe(); renderListaAttuale(); } chiudiModal('modal-confirm-delete-entire-list'); }
+        function aggiungiElementoLista() { if (!categoriaListaAttiva) { mostraAlertPersonalizzato("Crea prima una lista!"); return; } const input = document.getElementById('nuovo-elemento-lista'); const testo = input.value.trim(); if (testo !== "") { listeDati[categoriaListaAttiva].items.push({ testo: testo, checked: false }); salvaListe(); renderListaAttuale(); input.value = ''; inviaNotificaGenerica(`Aggiunto elemento in "${listeDati[categoriaListaAttiva].titolo}": ${testo}`); } }
+        function richiediConfermaEliminazioneLista(indice, event) { event.stopPropagation(); indiceElementoDaEliminare = indice; apriModal('modal-confirm-delete-list'); }
+        function eseguiEliminazioneElementoLista() { if (indiceElementoDaEliminare !== null) { listeDati[categoriaListaAttiva].items.splice(indiceElementoDaEliminare, 1); salvaListe(); renderListaAttuale(); indiceElementoDaEliminare = null; } chiudiModal('modal-confirm-delete-list'); }
+        function gestisciClickCheckboxLista(indice) { const item = listeDati[categoriaListaAttiva].items[indice]; if (item.checked) { item.checked = false; delete item.dataCompletamento; delete item.note; salvaListe(); renderListaAttuale(); } else { indiceElementoDaCompletare = indice; const oggi = new Date(); document.getElementById('complete-date').value = `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, '0')}-${String(oggi.getDate()).padStart(2, '0')}`; document.getElementById('complete-notes').value = ''; apriModal('modal-complete-item'); } }
+        function salvaCompletamentoElemento() { if (indiceElementoDaCompletare !== null) { const item = listeDati[categoriaListaAttiva].items[indiceElementoDaCompletare]; item.checked = true; item.dataCompletamento = document.getElementById('complete-date').value; item.note = document.getElementById('complete-notes').value.trim(); salvaListe(); renderListaAttuale(); inviaNotificaGenerica(`✓ Completato obiettivo in "${listeDati[categoriaListaAttiva].titolo}": ${item.testo}`); indiceElementoDaCompletare = null; } chiudiModal('modal-complete-item'); }
+        function salvaListe() { localStorage.setItem('appiccolina_liste_v2', JSON.stringify(listeDati)); syncToSupabase('liste', { data: listeDati }); }
+        function renderListaAttuale() {
+            const container = document.getElementById('contenitore-lista-attiva'); container.innerHTML = '';
+            if (!categoriaListaAttiva || !listeDati[categoriaListaAttiva]) { container.innerHTML = `<p style="text-align: center; color: var(--text-gray); font-size: 14px; margin-top: 20px;">Nessuna lista presente.</p>`; return; }
+            const listaAttuale = listeDati[categoriaListaAttiva].items;
+            if (listaAttuale.length === 0) { container.innerHTML = `<p style="text-align: center; color: var(--text-gray); font-size: 14px; margin-top: 20px;">Lista vuota.</p>`; return; }
+            listaAttuale.forEach((item, index) => {
+                const liOuter = document.createElement('div'); liOuter.className = 'list-item-outer'; const checkedClass = item.checked ? 'checked' : ''; let detailsHtml = '';
+                if (item.checked && (item.dataCompletamento || item.note)) detailsHtml = `<div class="list-item-details">${item.dataCompletamento ? `<div>Fatto il: ${formattaDataItaliana(item.dataCompletamento)}</div>` : ''}${item.note ? `<div class="list-item-note">"${item.note}"</div>` : ''}</div>`;
+                liOuter.innerHTML = `<div class="list-item-wrapper"><div class="list-item-left" onclick="gestisciClickCheckboxLista(${index})"><div class="list-checkbox ${checkedClass}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div><span class="list-text ${checkedClass}">${item.testo}</span></div><div class="btn-delete-date" onclick="richiediConfermaEliminazioneLista(${index}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div>${detailsHtml}`;
+                container.appendChild(liOuter);
+            });
+        }
+
+        function inviaAmore() { inviaNotificaGenerica("Ti ha mandato tanto amore! ❤️"); scatenaCuoriSincronizzati(); }
+        function creaCuoriciniVolanti() { for (let i = 0; i < 25; i++) { setTimeout(() => { const heart = document.createElement('div'); heart.classList.add('floating-heart'); heart.innerText = '❤️'; heart.style.left = Math.random() * 100 + 'vw'; heart.style.fontSize = (Math.random() * 20 + 16) + 'px'; const durata = Math.random() * 2 + 2.5; heart.style.animationDuration = durata + 's'; document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, durata * 1000); }, i * 60); } }
+
+        function apriModal(idModal) { const modal = document.getElementById(idModal); modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; modal.querySelector('.modal-card').style.transform = 'scale(1)'; }, 10); }
+        function chiudiModal(idModal) { const modal = document.getElementById(idModal); if(!modal) return; modal.querySelector('.modal-card').style.transform = 'scale(0.9)'; modal.style.opacity = '0'; setTimeout(() => { modal.style.display = 'none'; }, 300); }
+        function mostraAlertPersonalizzato(testo) { document.getElementById('alert-text').innerHTML = testo; apriModal('modal-alert'); }
+
+        function impostaMessaggioOrario(utenteCheAccede) {
+            const ore = new Date().getHours(); let msg = "Ti amoo";
+            if (ore > 5 && ore <= 9) msg = "Buongiorno amoree"; else if (ore > 9 && ore <= 12) msg = utenteCheAccede === 'Angelo' ? "Buona giornata piccolinoo" : "Buona giornata piccolinaa"; else if (ore > 12 && ore <= 14) msg = utenteCheAccede === 'Angelo' ? "Buon pranzoo" : "Buon pranzoo, MANGIA."; else if (ore > 14 && ore <= 15) msg = "Buon riposo amoree"; else if (ore > 20 && ore <= 23) msg = utenteCheAccede === 'Angelo' ? "Buona cenaa" : "Buona cenaa, MANGIA."; else if (ore > 23 || ore <= 5) msg = "Buonanotte amoree";
+            document.getElementById('testo-messaggio').innerText = msg; document.getElementById('autore-messaggio').innerText = "da " + (utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo');
+        }
+
+        function toggleTimerView(event) { event.stopPropagation(); isAlternateTimerView = !isAlternateTimerView; calcolaTempoTrascorso(); }
+        function calcolaTempoTrascorso() {
+            const oggi = new Date();
+            if (!isAlternateTimerView) {
+                let anni = oggi.getFullYear() - 2022, mesi = oggi.getMonth() - 6, giorni = oggi.getDate() - 13;
+                if (giorni < 0) { mesi--; giorni += new Date(oggi.getFullYear(), oggi.getMonth(), 0).getDate(); } if (mesi < 0) { anni--; mesi += 12; }
+                document.getElementById('t-val-1').innerText = anni; document.getElementById('t-val-2').innerText = mesi; document.getElementById('t-val-3').innerText = giorni; document.getElementById('t-lab-1').innerText = "Anni"; document.getElementById('t-lab-2').innerText = "Mesi"; document.getElementById('t-lab-3').innerText = "Giorni";
+            } else {
+                const diffMs = oggi.getTime() - new Date('2022-07-14T00:00:00').getTime();
+                document.getElementById('t-val-1').innerText = Math.floor(diffMs / 86400000); document.getElementById('t-val-2').innerText = Math.floor((diffMs / 3600000) % 24); document.getElementById('t-val-3').innerText = Math.floor((diffMs / 60000) % 60); document.getElementById('t-lab-1').innerText = "Giorni"; document.getElementById('t-lab-2').innerText = "Ore"; document.getElementById('t-lab-3').innerText = "Minuti";
+            }
+        }
+
+        function mostraTraguardiMisti() {
+            document.getElementById('lista-traguardi-completa').innerHTML = ''; const oggi = new Date(); const unGiorno = 86400000; const container = document.getElementById('lista-traguardi-completa');
+            let proxAnn = new Date(oggi.getFullYear(), 6, 13); if (oggi >= proxAnn && (oggi.getDate() !== 13 || oggi.getMonth() !== 6)) proxAnn.setFullYear(oggi.getFullYear() + 1);
+            let proxMes = new Date(oggi.getFullYear(), oggi.getMonth(), 13); if (oggi.getDate() > 13) proxMes.setMonth(oggi.getMonth() + 1);
+            let diffG = Math.ceil((new Date('2028-01-03T00:00:00').getTime() - oggi.getTime()) / unGiorno);
+
+            container.innerHTML += `
+                <li class="milestone-item"><div class="ms-info"><h4>Anniversario</h4><p>13 Luglio</p></div><div class="ms-days grad-step-1">${Math.ceil((proxAnn.getTime() - oggi.getTime()) / unGiorno)} gg</div></li>
+                <li class="milestone-item"><div class="ms-info"><h4>Mesiversario</h4><p>Il 13 del mese</p></div><div class="ms-days grad-step-2">${Math.ceil((proxMes.getTime() - (oggi.getTime() > proxMes.getTime() ? proxMes.getTime() : oggi.getTime())) / unGiorno)} gg</div></li>
+                <li class="milestone-item"><div class="ms-info"><h4>2000 Giorni</h4><p>3 Gennaio 2028</p></div><div class="ms-days grad-step-3">${diffG > 0 ? diffG + " gg" : "Traguardo Raggiunto!"}</div></li>
+            `;
+
+            (JSON.parse(localStorage.getItem('appiccolina_date')) || []).forEach((item, index) => {
+                const target = new Date(item.data); target.setHours(0,0,0,0); const oggiReset = new Date(); oggiReset.setHours(0,0,0,0);
+                let diff = Math.ceil((target.getTime() - oggiReset.getTime()) / unGiorno);
+                const li = document.createElement('li'); li.className = 'milestone-item';
+                li.innerHTML = `<div class="ms-info"><h4>${item.titolo}</h4><p>${target.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div><div style="display: flex; align-items: center; gap: 12px;"><div class="ms-days grad-step-2">${diff > 0 ? diff + " gg" : (diff === 0 ? "Oggi! 🎉" : "Passato")}</div><div class="btn-delete-date" onclick="richiediConfermaEliminazione(${index}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div>`;
+                container.appendChild(li);
+            });
+        }
+
+        function apriAggiungiData(event) { event.stopPropagation(); apriModal('modal-add-date'); }
+        function cambiaTipoInput() { const t = document.getElementById('input-type').value; document.getElementById('input-date').style.display = t === 'data' ? 'block' : 'none'; document.getElementById('input-days').style.display = t === 'giorni' ? 'block' : 'none'; }
+        function salvaNuovaData() {
+            const tit = document.getElementById('input-title').value.trim(); const tipo = document.getElementById('input-type').value; let dVal = ''; if(!tit) return;
+            if(tipo === 'data') { dVal = document.getElementById('input-date').value; if(!dVal) return; }
+            else { const g = parseInt(document.getElementById('input-days').value); if(isNaN(g) || g <= 0) return; const start = new Date('2022-07-13T00:00:00'); start.setDate(start.getDate() + g); dVal = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`; }
+            let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || []; salvate.push({ titolo: tit, data: dVal }); localStorage.setItem('appiccolina_date', JSON.stringify(salvate)); syncToSupabase('traguardi', { items: salvate });
+            document.getElementById('input-title').value = ''; document.getElementById('input-date').value = ''; document.getElementById('input-days').value = ''; chiudiModal('modal-add-date'); mostraTraguardiMisti();
+            inviaNotificaGenerica(`Aggiunto un nuovo traguardo sul calendario: "${tit}" 📅`);
+        }
+        function richiediConfermaEliminazione(index, event) { event.stopPropagation(); indiceDataDaEliminare = index; apriModal('modal-confirm-delete'); }
+        function eseguiEliminazioneData() { if (indiceDataDaEliminare !== null) { let s = JSON.parse(localStorage.getItem('appiccolina_date')) || []; s.splice(indiceDataDaEliminare, 1); localStorage.setItem('appiccolina_date', JSON.stringify(s)); syncToSupabase('traguardi', { items: s }); mostraTraguardiMisti(); indiceDataDaEliminare = null; } chiudiModal('modal-confirm-delete'); }
+
+        function creaEasterEgg(id, cb) { let c = 0, t; document.getElementById(id).addEventListener('click', () => { c++; clearTimeout(t); if(c===3){ cb(); c=0; } else t=setTimeout(()=>{c=0;},1000); }); }
+        creaEasterEgg('easter-egg-1', () => apriModal('modal-ee1'));
+        creaEasterEgg('easter-egg-2', () => apriModal('modal-ee2'));
+        creaEasterEgg('easter-egg-3', () => {
+            if (utenteAttuale === 'Simo') {
+                if (!couponsDati.find(c => c.id === 'easter-egg-baci')) { couponsDati.push({ id: 'easter-egg-baci', creator: 'Angelo', title: "N. indefinito di bacini da parte di Angelo", desc: "Coupon speciale infinito. Vale per sempre.", startDate: null, endDate: null, isRedeemed: true, isInfinite: true }); salvaCoupons(); mostraAlertPersonalizzato("🎁 SEGRETO SBLOCCATO!<br><br>Hai trovato il Coupon speciale infinito!"); renderCoupons(); creaCuoriciniVolanti(); }
+            } else {
+                const idx = couponsDati.findIndex(c => c.id === 'easter-egg-baci');
+                if (idx !== -1) { couponsDati.splice(idx, 1); salvaCoupons(); renderCoupons(); mostraAlertPersonalizzato("🔧 Reset Coupon Segreto Completato"); } else { mostraAlertPersonalizzato("🎁 Obiettivo Segreto pronto per Simo."); }
+            }
+        });
+    </script>
+</body>
+</html>
