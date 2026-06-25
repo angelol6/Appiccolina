@@ -424,7 +424,12 @@
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
             if(ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
-                await OneSignal.init({ appId: ONE_SIGNAL_APP_ID, allowLocalhostAsSecureOrigin: true });
+                await OneSignal.init({ 
+                    appId: ONE_SIGNAL_APP_ID, 
+                    allowLocalhostAsSecureOrigin: true,
+                    serviceWorkerParam: { scope: '/Appiccolina/' },
+                    serviceWorkerPath: 'sw.js'
+                });
             }
         });
 
