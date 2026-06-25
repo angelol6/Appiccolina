@@ -413,10 +413,10 @@
             var corpo = { app_id: ONE_SIGNAL_APP_ID, target_channel: 'push', headings: { en: 'Appiccolina', it: 'Appiccolina' }, contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio } };
             try {
                 var r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { include_aliases: { external_id: [partner] } })) });
-                if (!r.ok) {
-                    console.warn('[Push] Aliases fallito (' + r.status + '), provo filters...');
-                    r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { filters: [{ field: 'tag', key: 'username', relation: '=', value: partner }] })) });
-                    if (!r.ok) console.warn('[Push] Anche filters fallito:', r.status);
+                var data = await r.json();
+                if (!r.ok || (data.errors && data.errors.length > 0)) {
+                    console.warn('[Push] Aliases fallito, provo filters...', data.errors);
+                    await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { filters: [{ field: 'tag', key: 'username', relation: '=', value: partner }] })) });
                 }
             } catch (err) { console.warn('[Push] Errore di rete:', err); }
         }
