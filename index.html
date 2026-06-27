@@ -445,7 +445,9 @@
                 target_channel: 'push', 
                 headings: { en: 'Appiccolina', it: 'Appiccolina' }, 
                 contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio },
-                url: 'https://angelol6.github.io/Appiccolina/'
+                url: 'https://angelol6.github.io/Appiccolina/',
+                web_push_topic: Date.now().toString() + Math.random().toString(),
+                collapse_id: Date.now().toString()
             };
             try {
                 var r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { include_aliases: { external_id: [partner] } })) });
@@ -594,7 +596,15 @@
 
         function lanciaNotificaTraguardo(nomeTraguardo, dataOggiString) {
             const traguardoID = nomeTraguardo + "_" + dataOggiString;
-            if (!traguardiNotificatiOggi.includes(traguardoID)) { traguardiNotificatiOggi.push(traguardoID); setTimeout(() => { inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`); }, 2000); }
+            if (!traguardiNotificatiOggi.includes(traguardoID)) { 
+                traguardiNotificatiOggi.push(traguardoID); 
+                setTimeout(() => { 
+                    inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`); 
+                    if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
+                        inviaNotificaPush(utenteAttuale, `Oggi festeggiamo: ${nomeTraguardo}! 🎉`);
+                    }
+                }, 2000); 
+            }
         }
 
         function toggleMagicHeart(fromSync = false, forcedState = null) {
@@ -833,7 +843,8 @@
                 const target = new Date(item.data); target.setHours(0,0,0,0); const oggiReset = new Date(); oggiReset.setHours(0,0,0,0);
                 let diff = Math.ceil((target.getTime() - oggiReset.getTime()) / unGiorno);
                 const li = document.createElement('li'); li.className = 'milestone-item';
-                li.innerHTML = `<div class="ms-info"><h4>${item.titolo}</h4><p>${target.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div><div style="display: flex; align-items: center; gap: 12px;"><div class="ms-days grad-step-2">${diff > 0 ? diff + " gg" : (diff === 0 ? "Oggi! 🎉" : "Passato")}</div><div class="btn-delete-date" onclick="richiediConfermaEliminazione(${index}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div>`;
+                let authTag = item.autore ? `<span style="font-size: 11px; color: var(--text-gray); display: block; margin-top: 3px;">(Aggiunto da ${item.autore})</span>` : '';
+                li.innerHTML = `<div class="ms-info"><h4>${item.titolo}</h4><p>${target.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}${authTag}</p></div><div style="display: flex; align-items: center; gap: 12px;"><div class="ms-days grad-step-2">${diff > 0 ? diff + " gg" : (diff === 0 ? "Oggi! 🎉" : "Passato")}</div><div class="btn-delete-date" onclick="richiediConfermaEliminazione(${index}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div>`;
                 container.appendChild(li);
             });
         }
@@ -844,9 +855,9 @@
             const tit = document.getElementById('input-title').value.trim(); const tipo = document.getElementById('input-type').value; let dVal = ''; if(!tit) return;
             if(tipo === 'data') { dVal = document.getElementById('input-date').value; if(!dVal) return; }
             else { const g = parseInt(document.getElementById('input-days').value); if(isNaN(g) || g <= 0) return; const start = new Date('2022-07-13T00:00:00'); start.setDate(start.getDate() + g); dVal = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`; }
-            let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || []; salvate.push({ titolo: tit, data: dVal }); localStorage.setItem('appiccolina_date', JSON.stringify(salvate)); syncToSupabase('traguardi', { items: salvate });
+            let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || []; salvate.push({ titolo: tit, data: dVal, autore: utenteAttuale }); localStorage.setItem('appiccolina_date', JSON.stringify(salvate)); syncToSupabase('traguardi', { items: salvate });
             document.getElementById('input-title').value = ''; document.getElementById('input-date').value = ''; document.getElementById('input-days').value = ''; chiudiModal('modal-add-date'); mostraTraguardiMisti();
-            inviaNotificaGenerica(`Aggiunto un nuovo traguardo sul calendario: "${tit}" 📅`);
+            inviaNotificaGenerica(`Ho aggiunto il traguardo "${tit}" 📅`);
         }
         function richiediConfermaEliminazione(index, event) { event.stopPropagation(); indiceDataDaEliminare = index; apriModal('modal-confirm-delete'); }
         function eseguiEliminazioneData() { if (indiceDataDaEliminare !== null) { let s = JSON.parse(localStorage.getItem('appiccolina_date')) || []; s.splice(indiceDataDaEliminare, 1); localStorage.setItem('appiccolina_date', JSON.stringify(s)); syncToSupabase('traguardi', { items: s }); mostraTraguardiMisti(); indiceDataDaEliminare = null; } chiudiModal('modal-confirm-delete'); }
