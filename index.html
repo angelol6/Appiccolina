@@ -200,6 +200,27 @@
     <div id="modal-ee1" class="modal-overlay" onclick="chiudiModal('modal-ee1')"><div class="modal-card" onclick="event.stopPropagation()"><p id="ee1-text" style="font-size: 22px; font-weight: 500; margin: 10px 0;">Sei tu la mia Casa❤️</p></div></div>
     <div id="modal-ee2" class="modal-overlay" onclick="chiudiModal('modal-ee2')"><div class="modal-card photo-card" onclick="event.stopPropagation()"><img src="foto_coppia.jpg" alt="Noi"><p id="ee2-text" class="photo-caption">Ti amoo❤️</p></div></div>
     <div id="modal-alert" class="modal-overlay" onclick="chiudiModal('modal-alert')"><div class="modal-card" onclick="event.stopPropagation()"><p id="alert-text" style="font-size: 16px; font-weight: 400; color: var(--text-main); margin: 10px 0; line-height: 1.4;"></p></div></div>
+    
+    <!-- MODAL CUSTOM MSG -->
+    <div class="modal-overlay" id="modal-custom-msg">
+        <div class="modal-card" style="padding: 20px;">
+            <h3 style="margin-top:0">Messaggio Personalizzato</h3>
+            <p style="font-size:14px; color:var(--text-gray); margin-bottom: 15px;">Sostituisci temporaneamente il messaggio orario.</p>
+            <input type="text" id="custom-msg-testo" placeholder="Scrivi la frase..." style="width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; font-size: 16px; font-family: inherit; margin-bottom: 15px; box-sizing: border-box;">
+            
+            <label style="display:block; text-align:left; font-size:13px; color:var(--text-gray); margin-bottom:5px;">Inizio (data e ora):</label>
+            <input type="datetime-local" id="custom-msg-inizio" style="width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; font-size: 16px; font-family: inherit; margin-bottom: 15px; box-sizing: border-box;">
+            
+            <label style="display:block; text-align:left; font-size:13px; color:var(--text-gray); margin-bottom:5px;">Fine (data e ora):</label>
+            <input type="datetime-local" id="custom-msg-fine" style="width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; font-size: 16px; font-family: inherit; margin-bottom: 20px; box-sizing: border-box;">
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-user btn-simo" onclick="chiudiModal('modal-custom-msg')" style="flex: 1; margin-bottom:0">Annulla</button>
+                <button class="btn-user btn-angelo" onclick="salvaCustomMsg()" style="flex: 1; margin-bottom:0">Salva</button>
+            </div>
+            <button onclick="eliminaCustomMsg()" style="margin-top:15px; background:none; border:none; color:var(--simo-red); font-size:14px; cursor:pointer;">Elimina Attivo</button>
+        </div>
+    </div>
 
     <div id="modal-settings" class="modal-overlay" onclick="chiudiModal('modal-settings')">
         <div class="modal-card" onclick="event.stopPropagation()">
@@ -261,7 +282,12 @@
                     <svg viewBox="0 0 140 32" width="140" height="32"><g stroke="url(#combo-grad)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 4)"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></g><text x="34" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#combo-grad)" stroke="none">Home</text></svg>
                 </div>
                 <div class="widget-grid">
-                    <div class="widget widget-quote" id="messaggio-orario-container"><p class="quote-text gradient-text" id="testo-messaggio">...</p><span class="quote-author" id="autore-messaggio">da Angelo</span></div>
+                    <div class="widget widget-quote" id="messaggio-orario-container" style="position: relative;">
+                        <svg id="btn-edit-msg" onclick="apriEditMessaggio()" viewBox="0 0 24 24" width="20" height="20" style="position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-gray); display: none;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        <p class="quote-text gradient-text" id="testo-messaggio">...</p>
+                        <span class="quote-author" id="autore-messaggio">da Angelo</span>
+                        <div id="sub-messaggio" style="color: var(--text-gray); font-size: 13px; margin-top: 8px; display: none;"></div>
+                    </div>
                     <div class="widget widget-timer" id="easter-egg-2">
                         <div class="widget-header-flex"><h3>Insieme da</h3><div class="btn-switch-timer" onclick="toggleTimerView(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></div></div>
                         <div class="timer-display"><div class="time-box"><span class="time-number grad-step-1" id="t-val-1">0</span><span class="time-label" id="t-lab-1">Anni</span></div><div class="time-box"><span class="time-number grad-step-2" id="t-val-2">0</span><span class="time-label" id="t-lab-2">Mesi</span></div><div class="time-box"><span class="time-number grad-step-3" id="t-val-3">0</span><span class="time-label" id="t-lab-3">Giorni</span></div></div>
@@ -324,7 +350,7 @@
         const ONE_SIGNAL_API_KEY = 'os_v2_app_' + 'wybvutcnxnbvpfhvfrvpvcxmkfd3ajomjmeutpmgsayrsinmorsfa4kxwti2t4cmskijctzphk2emuc2pax7vfyznq44zwfogcrnosa';
 
         /* --- STATO GLOBALE APP --- */
-        let utenteAttuale = ''; let indiceDataDaEliminare = null; let isAlternateTimerView = false; let realTimeInterval;
+        let utenteAttuale = ''; let indiceDataDaEliminare = null; let isAlternateTimerView = false; let realTimeInterval; let customMessageData = null;
 
         /* --- SINCRONIZZAZIONE SUPABASE & MERGE INTELLIGENTE --- */
         async function syncToSupabase(id, payload) {
@@ -458,6 +484,7 @@
                   const lastBurst = localStorage.getItem('appiccolina_last_cloud_burst');
                   if (lastBurst !== record.payload.timestamp.toString()) { localStorage.setItem('appiccolina_last_cloud_burst', record.payload.timestamp.toString()); creaCuoriciniVolanti(); }
               }
+              if (record && record.id === 'custom_message') { customMessageData = record.payload; impostaMessaggioOrario(utenteAttuale); }
         }).subscribe();
 
         // Listener Realtime per dati condivisi (Coupon, Liste, Roulette, Traguardi)
@@ -510,8 +537,12 @@
                 userNameSpan.style.color = 'var(--angelo-blue)'; avatar.style.color = 'var(--angelo-blue)'; settingsUsername.style.color = 'var(--angelo-blue)'; settingsAvatar.style.color = 'var(--angelo-blue)'; ee1Testo.style.color = 'var(--angelo-blue)'; ee2Testo.style.color = 'var(--angelo-blue)'; loveInstruction.innerText = "Tocca il cuore per mandare amore a Simo"; greetingText.innerText = "Benvenuto,"; greetingHeart.innerHTML = heartSvg; greetingHeart.style.color = 'var(--angelo-blue)';
             }
 
+            if (utenteAttuale === 'Angelo') { document.getElementById('btn-edit-msg').style.display = 'block'; }
+            const resMsg = await supabaseClient.from('app_data').select('payload').eq('id', 'custom_message').single();
+            if (resMsg.data && resMsg.data.payload) { customMessageData = resMsg.data.payload; }
+
             aggiornaUIFotoProfilo(); document.getElementById('messaggio-orario-container').style.display = 'block'; impostaMessaggioOrario(nome); calcolaTempoTrascorso();
-            realTimeInterval = setInterval(() => { calcolaTempoTrascorso(); controllaTraguardiRaggiunti(); }, 60000);
+            realTimeInterval = setInterval(() => { calcolaTempoTrascorso(); controllaTraguardiRaggiunti(); impostaMessaggioOrario(utenteAttuale); }, 60000);
             mostraTraguardiMisti(); inizializzaRoulette(); inizializzaListe(); inizializzaCoupons(); controllaTraguardiRaggiunti(); loadAllData(); 
 
             if (localStorage.getItem('appiccolina_magic_heart') === 'true') { toggleMagicHeart(true, true); }
@@ -693,7 +724,69 @@
         function impostaMessaggioOrario(utenteCheAccede) {
             const ore = new Date().getHours(); let msg = "Ti amoo";
             if (ore >= 6 && ore <= 9) msg = "Buongiorno amoree"; else if (ore >= 10 && ore < 12) msg = utenteCheAccede === 'Angelo' ? "Buona giornata piccolinoo" : "Buona giornata piccolinaa"; else if (ore >= 12 && ore < 14) msg = utenteCheAccede === 'Angelo' ? "Buon pranzoo" : "Buon pranzoo, MANGIA."; else if (ore >= 14 && ore <= 15) msg = "Buon riposo amoree"; else if (ore >= 20 && ore <= 23) msg = utenteCheAccede === 'Angelo' ? "Buona cenaa" : "Buona cenaa, MANGIA."; else if (ore < 6) msg = "Buonanotte amoree";
-            document.getElementById('testo-messaggio').innerText = msg; document.getElementById('autore-messaggio').innerText = "da " + (utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo');
+            
+            let auth = "da " + (utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo');
+            let subMsg = "";
+
+            if (customMessageData && customMessageData.testo) {
+                let now = new Date().getTime();
+                let start = new Date(customMessageData.inizio).getTime();
+                let end = new Date(customMessageData.fine).getTime();
+                if (now >= start && now <= end) {
+                    if (utenteCheAccede === 'Angelo') {
+                        if (customMessageData.autore === 'Angelo') {
+                            subMsg = "Frase attiva per l'altro: " + customMessageData.testo;
+                        }
+                    } else {
+                        // --- DA DECOMMENTARE IL 13 LUGLIO ---
+                        // msg = customMessageData.testo;
+                        // auth = "da " + customMessageData.autore;
+                    }
+                }
+            }
+
+            document.getElementById('testo-messaggio').innerText = msg; 
+            document.getElementById('autore-messaggio').innerText = auth;
+            
+            const subElem = document.getElementById('sub-messaggio');
+            if (subMsg) { subElem.innerText = subMsg; subElem.style.display = 'block'; } else { subElem.style.display = 'none'; }
+        }
+
+        function apriEditMessaggio() {
+            if (customMessageData) {
+                document.getElementById('custom-msg-testo').value = customMessageData.testo || '';
+                document.getElementById('custom-msg-inizio').value = customMessageData.inizio || '';
+                document.getElementById('custom-msg-fine').value = customMessageData.fine || '';
+            } else {
+                let now = new Date();
+                let startStr = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                let end = new Date(now.getTime() + 2*3600*1000);
+                let endStr = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('custom-msg-testo').value = '';
+                document.getElementById('custom-msg-inizio').value = startStr;
+                document.getElementById('custom-msg-fine').value = endStr;
+            }
+            apriModal('modal-custom-msg');
+        }
+
+        async function salvaCustomMsg() {
+            let testo = document.getElementById('custom-msg-testo').value.trim();
+            let inizio = document.getElementById('custom-msg-inizio').value;
+            let fine = document.getElementById('custom-msg-fine').value;
+            if (!testo || !inizio || !fine) return mostraAlertPersonalizzato('Compila tutti i campi!');
+            if (new Date(fine) <= new Date(inizio)) return mostraAlertPersonalizzato('La data di fine deve essere dopo la data di inizio!');
+            let dataObj = { testo: testo, inizio: inizio, fine: fine, autore: utenteAttuale };
+            customMessageData = dataObj;
+            chiudiModal('modal-custom-msg');
+            impostaMessaggioOrario(utenteAttuale);
+            await syncToSupabase('custom_message', dataObj);
+        }
+
+        async function eliminaCustomMsg() {
+            customMessageData = null;
+            chiudiModal('modal-custom-msg');
+            impostaMessaggioOrario(utenteAttuale);
+            await syncToSupabase('custom_message', null);
         }
 
         function toggleTimerView(event) { event.stopPropagation(); isAlternateTimerView = !isAlternateTimerView; calcolaTempoTrascorso(); }
