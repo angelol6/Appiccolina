@@ -692,7 +692,7 @@
 
         function impostaMessaggioOrario(utenteCheAccede) {
             const ore = new Date().getHours(); let msg = "Ti amoo";
-            if (ore > 5 && ore <= 9) msg = "Buongiorno amoree"; else if (ore > 9 && ore <= 12) msg = utenteCheAccede === 'Angelo' ? "Buona giornata piccolinoo" : "Buona giornata piccolinaa"; else if (ore > 12 && ore <= 14) msg = utenteCheAccede === 'Angelo' ? "Buon pranzoo" : "Buon pranzoo, MANGIA."; else if (ore > 14 && ore <= 15) msg = "Buon riposo amoree"; else if (ore > 20 && ore <= 23) msg = utenteCheAccede === 'Angelo' ? "Buona cenaa" : "Buona cenaa, MANGIA."; else if (ore > 23 || ore <= 5) msg = "Buonanotte amoree";
+            if (ore >= 6 && ore <= 9) msg = "Buongiorno amoree"; else if (ore >= 10 && ore < 12) msg = utenteCheAccede === 'Angelo' ? "Buona giornata piccolinoo" : "Buona giornata piccolinaa"; else if (ore >= 12 && ore < 14) msg = utenteCheAccede === 'Angelo' ? "Buon pranzoo" : "Buon pranzoo, MANGIA."; else if (ore >= 14 && ore <= 15) msg = "Buon riposo amoree"; else if (ore >= 20 && ore <= 23) msg = utenteCheAccede === 'Angelo' ? "Buona cenaa" : "Buona cenaa, MANGIA."; else if (ore < 6) msg = "Buonanotte amoree";
             document.getElementById('testo-messaggio').innerText = msg; document.getElementById('autore-messaggio').innerText = "da " + (utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo');
         }
 
