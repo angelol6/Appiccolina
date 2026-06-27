@@ -486,7 +486,11 @@
                   const lastBurst = localStorage.getItem('appiccolina_last_cloud_burst');
                   if (lastBurst !== record.payload.timestamp.toString()) { localStorage.setItem('appiccolina_last_cloud_burst', record.payload.timestamp.toString()); creaCuoriciniVolanti(); }
               }
-              if (record && record.id === 'custom_message') { customMessageData = record.payload; impostaMessaggioOrario(utenteAttuale); }
+              if (record && record.id === 'custom_message') { 
+                  if (record.payload && !record.payload.eliminato) customMessageData = record.payload; 
+                  else customMessageData = null;
+                  impostaMessaggioOrario(utenteAttuale); 
+              }
         }).subscribe();
 
         // Listener Realtime per dati condivisi (Coupon, Liste, Roulette, Traguardi)
@@ -540,8 +544,10 @@
             }
 
             if (utenteAttuale === 'Angelo') { document.getElementById('btn-edit-msg').style.display = 'block'; }
+            else { document.getElementById('btn-edit-msg').style.display = 'none'; }
+
             const resMsg = await supabaseClient.from('app_data').select('payload').eq('id', 'custom_message').single();
-            if (resMsg.data && resMsg.data.payload) { customMessageData = resMsg.data.payload; }
+            if (resMsg.data && resMsg.data.payload && !resMsg.data.payload.eliminato) { customMessageData = resMsg.data.payload; }
 
             aggiornaUIFotoProfilo(); document.getElementById('messaggio-orario-container').style.display = 'block'; impostaMessaggioOrario(nome); calcolaTempoTrascorso();
             realTimeInterval = setInterval(() => { calcolaTempoTrascorso(); controllaTraguardiRaggiunti(); impostaMessaggioOrario(utenteAttuale); }, 60000);
@@ -725,7 +731,7 @@
 
         function impostaMessaggioOrario(utenteCheAccede) {
             const ore = new Date().getHours(); let msg = "Ti amoo";
-            if (ore >= 6 && ore <= 9) msg = "Buongiorno amoree"; else if (ore >= 10 && ore < 12) msg = utenteCheAccede === 'Angelo' ? "Buona giornata piccolinoo" : "Buona giornata piccolinaa"; else if (ore >= 12 && ore < 14) msg = utenteCheAccede === 'Angelo' ? "Buon pranzoo" : "Buon pranzoo, MANGIA."; else if (ore >= 14 && ore <= 15) msg = "Buon riposo amoree"; else if (ore >= 20 && ore <= 23) msg = utenteCheAccede === 'Angelo' ? "Buona cenaa" : "Buona cenaa, MANGIA."; else if (ore < 6) msg = "Buonanotte amoree";
+            if (ore >= 6 && ore <= 9) msg = "Buongiorno amoree"; else if (ore >= 10 && ore < 12) msg = utenteCheAccede === 'Angelo' ? "Buona giornata piccolinoo" : "Buona giornata piccolinaa"; else if (ore >= 12 && ore < 14) msg = utenteCheAccede === 'Angelo' ? "Buon pranzoo" : "Buon pranzoo, MANGIA."; else if (ore === 14) msg = "Buon riposo amoree"; else if (ore >= 20 && ore <= 23) msg = utenteCheAccede === 'Angelo' ? "Buona cenaa" : "Buona cenaa, MANGIA."; else if (ore < 6) msg = "Buonanotte amoree";
             
             let auth = "da " + (utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo');
             let subMsg = "";
@@ -795,7 +801,7 @@
             customMessageData = null;
             chiudiModal('modal-custom-msg');
             impostaMessaggioOrario(utenteAttuale);
-            await syncToSupabase('custom_message', null);
+            await syncToSupabase('custom_message', { eliminato: true });
         }
 
         function toggleTimerView(event) { event.stopPropagation(); isAlternateTimerView = !isAlternateTimerView; calcolaTempoTrascorso(); }
