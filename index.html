@@ -437,7 +437,7 @@
 
         function salvaCoupons() { localStorage.setItem('appiccolina_coupons', JSON.stringify(couponsDati)); syncToSupabase('coupons', { items: couponsDati }); }
 
-        async function inviaNotificaPush(partner, messaggio) {
+        async function inviaNotificaPush(partner, messaggio, tipo = null) {
             if (!ONE_SIGNAL_APP_ID || ONE_SIGNAL_APP_ID.length <= 20 || ONE_SIGNAL_APP_ID === 'APP_ID_ONESIGNAL') return;
             var hdrs = { 'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Bearer ' + ONE_SIGNAL_API_KEY };
             var corpo = { 
@@ -446,8 +446,8 @@
                 headings: { en: 'Appiccolina', it: 'Appiccolina' }, 
                 contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio },
                 url: 'https://angelol6.github.io/Appiccolina/',
-                web_push_topic: Date.now().toString() + Math.random().toString(),
-                collapse_id: Date.now().toString()
+                web_push_topic: tipo ? tipo : (Date.now().toString() + Math.random().toString()),
+                collapse_id: tipo ? tipo : Date.now().toString()
             };
             try {
                 var r = await fetch('https://api.onesignal.com/notifications', { method: 'POST', headers: hdrs, body: JSON.stringify(Object.assign({}, corpo, { include_aliases: { external_id: [partner] } })) });
@@ -570,7 +570,7 @@
 
         /* --- POSTINO NETLIFY (SBLOCCO NOTIFICHE) --- */
         let toastTimeout;
-        function inviaNotificaGenerica(messaggio) {
+        function inviaNotificaGenerica(messaggio, tipo = null) {
             const partner = utenteAttuale === 'Simo' ? 'Angelo' : 'Simo';
             
             document.getElementById('toast-icon').innerText = '❤️'; document.getElementById('toast-message').innerText = `Notifica inviata a ${partner}: "${messaggio}"`;
@@ -578,7 +578,7 @@
             clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
             
             if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
-                inviaNotificaPush(partner, messaggio);
+                inviaNotificaPush(partner, messaggio, tipo);
             }
         }
 
@@ -599,9 +599,9 @@
             if (!traguardiNotificatiOggi.includes(traguardoID)) { 
                 traguardiNotificatiOggi.push(traguardoID); 
                 setTimeout(() => { 
-                    inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`); 
+                    inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`, `traguardo_${traguardoID}`); 
                     if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
-                        inviaNotificaPush(utenteAttuale, `Oggi festeggiamo: ${nomeTraguardo}! 🎉`);
+                        inviaNotificaPush(utenteAttuale, `Oggi festeggiamo: ${nomeTraguardo}! 🎉`, `traguardo_${traguardoID}`);
                     }
                 }, 2000); 
             }
@@ -732,7 +732,7 @@
             });
         }
 
-        function inviaAmore() { inviaNotificaGenerica("Ti ha mandato tanto amore! ❤️"); scatenaCuoriSincronizzati(); }
+        function inviaAmore() { inviaNotificaGenerica("Ti ha mandato tanto amore! ❤️", "amore"); scatenaCuoriSincronizzati(); }
         function creaCuoriciniVolanti() { for (let i = 0; i < 25; i++) { setTimeout(() => { const heart = document.createElement('div'); heart.classList.add('floating-heart'); heart.innerText = '❤️'; heart.style.left = Math.random() * 100 + 'vw'; heart.style.fontSize = (Math.random() * 20 + 16) + 'px'; const durata = Math.random() * 2 + 2.5; heart.style.animationDuration = durata + 's'; document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, durata * 1000); }, i * 60); } }
 
         function apriModal(idModal) { const modal = document.getElementById(idModal); modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; modal.querySelector('.modal-card').style.transform = 'scale(1)'; }, 10); }
