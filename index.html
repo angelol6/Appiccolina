@@ -261,6 +261,19 @@
     <div id="modal-add-coupon" class="modal-overlay" onclick="chiudiModal('modal-add-coupon')"><div class="modal-card" style="text-align: left;" onclick="event.stopPropagation()"><h3 style="margin-top:0; margin-bottom:15px; font-size:18px; font-weight:500;">Nuovo Coupon</h3><input type="text" id="coupon-title" class="modal-input" placeholder="Titolo del coupon"><textarea id="coupon-desc" class="modal-input" placeholder="Descrizione o regole..." style="resize:none; height:60px;"></textarea><p style="margin:5px 0; font-size:12px; color:var(--text-gray);">Inizio validità (opzionale):</p><input type="date" id="coupon-start" class="modal-input"><p style="margin:5px 0; font-size:12px; color:var(--text-gray);">Scadenza (opzionale):</p><input type="date" id="coupon-end" class="modal-input"><div class="modal-btn-row"><button class="modal-btn" onclick="salvaNuovoCoupon()" style="background: var(--union-gradient); color: white;">Crea</button><button class="modal-btn" onclick="chiudiModal('modal-add-coupon')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
     <div id="modal-confirm-delete-coupon" class="modal-overlay" onclick="chiudiModal('modal-confirm-delete-coupon')"><div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()"><h3 style="margin-top:0; font-size:18px; font-weight:500;">Elimina Coupon</h3><p style="font-size:15px; color:var(--text-gray); margin-bottom:20px;">Sei sicuro di voler ritirare questo coupon?</p><div class="modal-btn-row"><button class="modal-btn" onclick="eseguiEliminazioneCoupon()" style="background: var(--simo-red); color: white;">Elimina</button><button class="modal-btn" onclick="chiudiModal('modal-confirm-delete-coupon')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
 
+    <div id="modal-album-traguardo" class="modal-overlay" style="display: none; align-items: center; justify-content: center;" onclick="chiudiModal('modal-album-traguardo')">
+        <div class="modal-card" style="width: 90%; max-width: 400px; padding: 25px; transform: scale(0.95); transition: transform 0.2s; position: relative; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
+            <div class="close-btn" onclick="chiudiModal('modal-album-traguardo')">X</div>
+            <h3 id="album-traguardo-titolo" style="margin-bottom: 20px; font-weight: 800; color: var(--text-main); font-size: 18px;">Album dei Ricordi</h3>
+            <div id="album-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                <!-- Photos go here -->
+            </div>
+            <button id="btn-upload-album" class="btn-user" style="width: 100%; font-size: 14px; padding: 10px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="document.getElementById('input-foto-traguardo').click()">Aggiungi Foto</button>
+        </div>
+    </div>
+    
+    <input type="file" id="input-foto-traguardo" accept="image/*" style="display: none;" onchange="gestisciUploadFotoTraguardo(event)">
+
     <div id="login-screen">
         <div class="login-container">
             <img class="heart-image" src="logo_transparent.png" alt="Appiccolina Icon">
