@@ -262,7 +262,7 @@
     <div id="modal-confirm-delete-coupon" class="modal-overlay" onclick="chiudiModal('modal-confirm-delete-coupon')"><div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()"><h3 style="margin-top:0; font-size:18px; font-weight:500;">Elimina Coupon</h3><p style="font-size:15px; color:var(--text-gray); margin-bottom:20px;">Sei sicuro di voler ritirare questo coupon?</p><div class="modal-btn-row"><button class="modal-btn" onclick="eseguiEliminazioneCoupon()" style="background: var(--simo-red); color: white;">Elimina</button><button class="modal-btn" onclick="chiudiModal('modal-confirm-delete-coupon')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button></div></div></div>
 
     <div id="modal-album-traguardo" class="modal-overlay" style="display: none; align-items: center; justify-content: center;" onclick="chiudiModal('modal-album-traguardo')">
-        <div class="modal-card" style="width: 90%; max-width: 400px; padding: 25px; transform: scale(0.95); transition: transform 0.2s; position: relative; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div class="modal-card" style="position: relative; max-height: 80vh; overflow-y: auto; text-align: left;" onclick="event.stopPropagation()">
             <div class="close-btn" onclick="chiudiModal('modal-album-traguardo')">X</div>
             <h3 id="album-traguardo-titolo" style="margin-bottom: 20px; font-weight: 800; color: var(--text-main); font-size: 18px;">Album dei Ricordi</h3>
             <div id="album-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
