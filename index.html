@@ -459,6 +459,18 @@
             } catch (err) { console.warn('[Push] Errore di rete:', err); }
         }
 
+        let pStart = { x: 0, y: 0 };
+        document.addEventListener('touchstart', function(e) { pStart.x = e.touches[0].screenX; pStart.y = e.touches[0].screenY; }, {passive: true});
+        document.addEventListener('touchend', function(e) {
+            if (window.scrollY === 0) {
+                let pEnd = { x: e.changedTouches[0].screenX, y: e.changedTouches[0].screenY };
+                if (pEnd.y - pStart.y > 150 && Math.abs(pEnd.x - pStart.x) < 100) {
+                    if ('caches' in window) { caches.keys().then(names => { for (let name of names) caches.delete(name); }); }
+                    setTimeout(() => window.location.reload(true), 100);
+                }
+            }
+        });
+
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
             if(ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
@@ -573,7 +585,7 @@
         function inviaNotificaGenerica(messaggio, tipo = null) {
             const partner = utenteAttuale === 'Simo' ? 'Angelo' : 'Simo';
             
-            document.getElementById('toast-icon').innerText = '❤️'; document.getElementById('toast-message').innerText = `Notifica inviata a ${partner}: "${messaggio}"`;
+            document.getElementById('toast-icon').innerText = ''; document.getElementById('toast-message').innerText = `Notifica inviata a ${partner}: "${messaggio}"`;
             const toast = document.getElementById('toast-notification'); toast.classList.add('show');
             clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
             
@@ -601,9 +613,9 @@
                 localStorage.setItem('appiccolina_notifiche_traguardi', JSON.stringify(traguardiNotificatiOggi));
                 syncToSupabase('notifiche_traguardi', { items: traguardiNotificatiOggi });
                 setTimeout(() => { 
-                    inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`, `traguardo_${traguardoID}`); 
+                    inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}`, `traguardo_${traguardoID}`); 
                     if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
-                        inviaNotificaPush(utenteAttuale, `Oggi festeggiamo: ${nomeTraguardo}! 🎉`, `traguardo_${traguardoID}`);
+                        inviaNotificaPush(utenteAttuale, `Oggi festeggiamo: ${nomeTraguardo}`, `traguardo_${traguardoID}`);
                     }
                 }, 2000); 
             }
@@ -615,7 +627,7 @@
             if (!fromSync) {
                 localStorage.setItem('appiccolina_magic_heart', newState ? 'true' : 'false');
                 supabaseClient.from('app_data').upsert({ id: 'magic_heart', payload: { state: newState } }).then(res => { if(res.error) console.log(res.error) });
-                if (newState) inviaNotificaGenerica("Ha attivato il Cuore Magico! Componilo subito ❤️");
+                if (newState) inviaNotificaGenerica("Ha attivato il Cuore Magico! Componilo subito");
             }
         }
 
@@ -644,7 +656,7 @@
             couponsDati.push({ id: 'coup-' + Date.now(), creator: utenteAttuale, title: title, desc: desc, startDate: start || null, endDate: end || null, isRedeemed: false, isInfinite: false });
             salvaCoupons();
             document.getElementById('coupon-title').value = ''; document.getElementById('coupon-desc').value = ''; document.getElementById('coupon-start').value = ''; document.getElementById('coupon-end').value = '';
-            chiudiModal('modal-add-coupon'); renderCoupons(); inviaNotificaGenerica(`Ti ha regalato un nuovo Coupon: "${title}" 🎟️`);
+            chiudiModal('modal-add-coupon'); renderCoupons(); inviaNotificaGenerica(`Ti ha regalato un nuovo Coupon: "${title}"`);
         }
 
         function formattaDataItaliana(dataStringa) { if (!dataStringa) return ''; return new Date(dataStringa).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }); }
@@ -663,10 +675,10 @@
 
                 const baseHTML = `<h4 class="coupon-title">${coupon.title}</h4><p class="coupon-desc">${coupon.desc}</p><p class="coupon-meta">${dateText}</p>`;
                 if (coupon.creator === utenteAttuale) {
-                    countCreati++; let statusHTML = coupon.isRedeemed ? `<div class="coupon-status status-redeemed">✓ Riscattato dal partner</div>` : `<div class="coupon-status status-pending">In attesa di riscatto</div>`;
+                    countCreati++; let statusHTML = coupon.isRedeemed ? `<div class="coupon-status status-redeemed">Riscattato dal partner</div>` : `<div class="coupon-status status-pending">In attesa di riscatto</div>`;
                     card.innerHTML = baseHTML + statusHTML + `<button class="btn-elimina-coupon" style="margin-top:10px;" onclick="richiediConfermaEliminazioneCoupon('${coupon.id}')">Ritira Coupon</button>`; containerCreati.appendChild(card);
                 } else {
-                    if (coupon.isRedeemed && !coupon.isInfinite) { countRiscattati++; card.innerHTML = baseHTML + `<div class="coupon-status status-pending">✓ Già utilizzato</div>`; containerRiscattati.appendChild(card); }
+                    if (coupon.isRedeemed && !coupon.isInfinite) { countRiscattati++; card.innerHTML = baseHTML + `<div class="coupon-status status-pending">Già utilizzato</div>`; containerRiscattati.appendChild(card); }
                     else if (isValid) { countRiscattabili++; let btnHTML = isExpired ? `<button class="btn-riscatta" disabled>Scaduto</button>` : (coupon.isRedeemed && coupon.isInfinite ? `<button class="btn-riscatta" onclick="riscattaCoupon('${coupon.id}')">Usa ancora</button>` : `<button class="btn-riscatta" onclick="riscattaCoupon('${coupon.id}')">Riscatta Ora</button>`); card.innerHTML = baseHTML + btnHTML; containerRiscattabili.appendChild(card); }
                 }
             });
@@ -677,13 +689,13 @@
 
         function riscattaCoupon(id) {
             const index = couponsDati.findIndex(c => c.id === id);
-            if (index !== -1) { if (!couponsDati[index].isInfinite) couponsDati[index].isRedeemed = true; salvaCoupons(); renderCoupons(); inviaNotificaGenerica(`Ha appena riscosso il tuo Coupon: "${couponsDati[index].title}"! 🎫`); scatenaCuoriSincronizzati(); }
+            if (index !== -1) { if (!couponsDati[index].isInfinite) couponsDati[index].isRedeemed = true; salvaCoupons(); renderCoupons(); inviaNotificaGenerica(`Ha appena riscosso il tuo Coupon: "${couponsDati[index].title}"`); scatenaCuoriSincronizzati(); }
         }
         function richiediConfermaEliminazioneCoupon(id) { idCouponDaEliminare = id; apriModal('modal-confirm-delete-coupon'); }
         function eseguiEliminazioneCoupon() { if (idCouponDaEliminare) { couponsDati = couponsDati.filter(c => c.id !== idCouponDaEliminare); salvaCoupons(); renderCoupons(); idCouponDaEliminare = null; } chiudiModal('modal-confirm-delete-coupon'); }
         function controllaCouponSbloccati() {
             const oggi = new Date(); oggi.setHours(0,0,0,0); const dataOggiString = `${oggi.getFullYear()}-${oggi.getMonth()}-${oggi.getDate()}`;
-            couponsDati.forEach(coupon => { if (coupon.creator !== utenteAttuale && coupon.startDate && !coupon.isRedeemed) { const start = new Date(coupon.startDate); start.setHours(0,0,0,0); if (start.getTime() - oggi.getTime() === 0) { const couponID = coupon.id + "_" + dataOggiString; if (!couponNotificatiOggi.includes(couponID)) { couponNotificatiOggi.push(couponID); setTimeout(() => { inviaNotificaGenerica("Un nuovo Coupon regalo si è sbloccato oggi! 🎟️"); }, 4000); } } } });
+            couponsDati.forEach(coupon => { if (coupon.creator !== utenteAttuale && coupon.startDate && !coupon.isRedeemed) { const start = new Date(coupon.startDate); start.setHours(0,0,0,0); if (start.getTime() - oggi.getTime() === 0) { const couponID = coupon.id + "_" + dataOggiString; if (!couponNotificatiOggi.includes(couponID)) { couponNotificatiOggi.push(couponID); setTimeout(() => { inviaNotificaGenerica("Un nuovo Coupon regalo si è sbloccato oggi!"); }, 4000); } } } });
         }
 
         let rouletteOpzioni = []; let currentRotation = 0; let isSpinning = false;
@@ -705,21 +717,21 @@
         function salvaRoulette() { localStorage.setItem('appiccolina_roulette', JSON.stringify(rouletteOpzioni)); syncToSupabase('roulette', { options: rouletteOpzioni }); }
         function giraRoulette() {
             if (isSpinning || rouletteOpzioni.length < 2) return; isSpinning = true; const ruota = document.getElementById('roulette-wheel'); currentRotation += (1800 + Math.floor(Math.random() * 360)); ruota.style.transform = `rotate(${currentRotation}deg)`;
-            setTimeout(() => { const rotazioneFinale = currentRotation % 360; const vincitore = rouletteOpzioni[Math.floor(((360 - rotazioneFinale) % 360) / (360 / rouletteOpzioni.length))]; mostraAlertPersonalizzato(`Il fato ha deciso:<br><br><span style="font-size: 24px; font-weight: 600;" class="gradient-text">${vincitore}</span>`); inviaNotificaGenerica(`Ha girato la ruota e il fato ha scelto: "${vincitore}"! 🎰`); isSpinning = false; }, 4000);
+            setTimeout(() => { const rotazioneFinale = currentRotation % 360; const vincitore = rouletteOpzioni[Math.floor(((360 - rotazioneFinale) % 360) / (360 / rouletteOpzioni.length))]; mostraAlertPersonalizzato(`Il fato ha deciso:<br><br><span style="font-size: 24px; font-weight: 600;" class="gradient-text">${vincitore}</span>`); inviaNotificaGenerica(`Ha girato la ruota e il fato ha scelto: "${vincitore}"`); isSpinning = false; }, 4000);
         }
 
         let listeDati = {}; let categoriaListaAttiva = ''; let indiceElementoDaEliminare = null, indiceElementoDaCompletare = null, keyListaDaEliminare = null;
         function inizializzaListe() { const salvate = localStorage.getItem('appiccolina_liste_v2'); if (salvate) { listeDati = JSON.parse(salvate); if (Object.keys(listeDati).length > 0) categoriaListaAttiva = Object.keys(listeDati)[0]; } else { listeDati = { 'cat-todo': { titolo: 'Cose da fare', items: [] }, 'cat-film': { titolo: 'Film & Serie TV', items: [] } }; categoriaListaAttiva = 'cat-todo'; } renderCategorieListe(); renderListaAttuale(); }
         function renderCategorieListe() { const container = document.getElementById('list-categories-container'); container.innerHTML = ''; for (const key in listeDati) { const btn = document.createElement('div'); btn.className = `list-category-btn ${key === categoriaListaAttiva ? 'active' : ''}`; const t = document.createElement('span'); t.innerText = listeDati[key].titolo; btn.appendChild(t); const del = document.createElement('span'); del.innerHTML = '&times;'; del.className = 'list-category-delete'; del.onclick = (e) => richiediConfermaEliminazioneInteraLista(key, e); btn.appendChild(del); btn.onclick = (e) => { if (e.target !== del) cambiaCategoriaLista(key); }; container.appendChild(btn); } const addBtn = document.createElement('div'); addBtn.className = 'list-category-btn'; addBtn.innerHTML = '<strong>+</strong>'; addBtn.onclick = () => apriModal('modal-add-list'); container.appendChild(addBtn); }
         function cambiaCategoriaLista(keyCategoria) { categoriaListaAttiva = keyCategoria; renderCategorieListe(); renderListaAttuale(); }
-        function creaNuovaCategoriaLista() { const input = document.getElementById('input-new-list-name'); const titolo = input.value.trim(); if (titolo !== "") { const newKey = 'cat-' + Date.now(); listeDati[newKey] = { titolo: titolo, items: [] }; salvaListe(); cambiaCategoriaLista(newKey); input.value = ''; chiudiModal('modal-add-list'); inviaNotificaGenerica(`Ha creato una nuova lista condivisa: "${titolo}" 📝`); } }
+        function creaNuovaCategoriaLista() { const input = document.getElementById('input-new-list-name'); const titolo = input.value.trim(); if (titolo !== "") { const newKey = 'cat-' + Date.now(); listeDati[newKey] = { titolo: titolo, items: [] }; salvaListe(); cambiaCategoriaLista(newKey); input.value = ''; chiudiModal('modal-add-list'); inviaNotificaGenerica(`Ha creato una nuova lista condivisa: "${titolo}"`); } }
         function richiediConfermaEliminazioneInteraLista(key, event) { event.stopPropagation(); keyListaDaEliminare = key; apriModal('modal-confirm-delete-entire-list'); }
         function eseguiEliminazioneInteraLista() { if (keyListaDaEliminare) { delete listeDati[keyListaDaEliminare]; salvaListe(); if (categoriaListaAttiva === keyListaDaEliminare) { const keys = Object.keys(listeDati); categoriaListaAttiva = keys.length > 0 ? keys[0] : null; } keyListaDaEliminare = null; renderCategorieListe(); renderListaAttuale(); } chiudiModal('modal-confirm-delete-entire-list'); }
         function aggiungiElementoLista() { if (!categoriaListaAttiva) { mostraAlertPersonalizzato("Crea prima una lista!"); return; } const input = document.getElementById('nuovo-elemento-lista'); const testo = input.value.trim(); if (testo !== "") { listeDati[categoriaListaAttiva].items.push({ testo: testo, checked: false }); salvaListe(); renderListaAttuale(); input.value = ''; inviaNotificaGenerica(`Aggiunto elemento in "${listeDati[categoriaListaAttiva].titolo}": ${testo}`); } }
         function richiediConfermaEliminazioneLista(indice, event) { event.stopPropagation(); indiceElementoDaEliminare = indice; apriModal('modal-confirm-delete-list'); }
         function eseguiEliminazioneElementoLista() { if (indiceElementoDaEliminare !== null) { listeDati[categoriaListaAttiva].items.splice(indiceElementoDaEliminare, 1); salvaListe(); renderListaAttuale(); indiceElementoDaEliminare = null; } chiudiModal('modal-confirm-delete-list'); }
         function gestisciClickCheckboxLista(indice) { const item = listeDati[categoriaListaAttiva].items[indice]; if (item.checked) { item.checked = false; delete item.dataCompletamento; delete item.note; salvaListe(); renderListaAttuale(); } else { indiceElementoDaCompletare = indice; const oggi = new Date(); document.getElementById('complete-date').value = `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, '0')}-${String(oggi.getDate()).padStart(2, '0')}`; document.getElementById('complete-notes').value = ''; apriModal('modal-complete-item'); } }
-        function salvaCompletamentoElemento() { if (indiceElementoDaCompletare !== null) { const item = listeDati[categoriaListaAttiva].items[indiceElementoDaCompletare]; item.checked = true; item.dataCompletamento = document.getElementById('complete-date').value; item.note = document.getElementById('complete-notes').value.trim(); salvaListe(); renderListaAttuale(); inviaNotificaGenerica(`✓ Completato obiettivo in "${listeDati[categoriaListaAttiva].titolo}": ${item.testo}`); indiceElementoDaCompletare = null; } chiudiModal('modal-complete-item'); }
+        function salvaCompletamentoElemento() { if (indiceElementoDaCompletare !== null) { const item = listeDati[categoriaListaAttiva].items[indiceElementoDaCompletare]; item.checked = true; item.dataCompletamento = document.getElementById('complete-date').value; item.note = document.getElementById('complete-notes').value.trim(); salvaListe(); renderListaAttuale(); inviaNotificaGenerica(`Completato obiettivo in "${listeDati[categoriaListaAttiva].titolo}": ${item.testo}`); indiceElementoDaCompletare = null; } chiudiModal('modal-complete-item'); }
         function salvaListe() { localStorage.setItem('appiccolina_liste_v2', JSON.stringify(listeDati)); syncToSupabase('liste', { data: listeDati }); }
         function renderListaAttuale() {
             const container = document.getElementById('contenitore-lista-attiva'); container.innerHTML = '';
@@ -734,7 +746,7 @@
             });
         }
 
-        function inviaAmore() { inviaNotificaGenerica("Ti ha mandato tanto amore! ❤️", "amore"); scatenaCuoriSincronizzati(); }
+        function inviaAmore() { inviaNotificaGenerica("Ti ha mandato tanto amore!", "amore"); scatenaCuoriSincronizzati(); }
         function creaCuoriciniVolanti() { for (let i = 0; i < 25; i++) { setTimeout(() => { const heart = document.createElement('div'); heart.classList.add('floating-heart'); heart.innerText = '❤️'; heart.style.left = Math.random() * 100 + 'vw'; heart.style.fontSize = (Math.random() * 20 + 16) + 'px'; const durata = Math.random() * 2 + 2.5; heart.style.animationDuration = durata + 's'; document.body.appendChild(heart); setTimeout(() => { heart.remove(); }, durata * 1000); }, i * 60); } }
 
         function apriModal(idModal) { const modal = document.getElementById(idModal); modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; modal.querySelector('.modal-card').style.transform = 'scale(1)'; }, 10); }
@@ -846,7 +858,7 @@
                 
                 let imgHtml = '';
                 if (diff <= 0) {
-                    let btnText = (item.immagini && item.immagini.length > 0) ? `🖼️ Apri Album (${item.immagini.length}/4)` : `📷 Crea Album`;
+                    let btnText = (item.immagini && item.immagini.length > 0) ? `Apri Album (${item.immagini.length}/4)` : `Crea Album`;
                     imgHtml = `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriAlbumTraguardo(${index}, event)">${btnText}</button></div>`;
                 }
                 
