@@ -505,6 +505,7 @@
             if (r.id === 'liste') { listeDati = r.payload.data || {}; if (Object.keys(listeDati).length > 0 && !listeDati[categoriaListaAttiva]) categoriaListaAttiva = Object.keys(listeDati)[0]; localStorage.setItem('appiccolina_liste_v2', JSON.stringify(listeDati)); renderCategorieListe(); renderListaAttuale(); }
             if (r.id === 'roulette') { rouletteOpzioni = r.payload.options || []; localStorage.setItem('appiccolina_roulette', JSON.stringify(rouletteOpzioni)); disegnaRoulette(); disegnaPillole(); }
             if (r.id === 'traguardi') { localStorage.setItem('appiccolina_date', JSON.stringify(r.payload.items || [])); mostraTraguardiMisti(); }
+            if (r.id === 'notifiche_traguardi') { traguardiNotificatiOggi = r.payload.items || []; localStorage.setItem('appiccolina_notifiche_traguardi', JSON.stringify(traguardiNotificatiOggi)); }
         }).subscribe();
 
         function aggiornaUIFotoProfilo() {
@@ -583,7 +584,7 @@
             }
         }
 
-        let traguardiNotificatiOggi = [];
+        let traguardiNotificatiOggi = JSON.parse(localStorage.getItem('appiccolina_notifiche_traguardi')) || [];
         function controllaTraguardiRaggiunti() {
             const oggi = new Date(); const dataOggiString = `${oggi.getFullYear()}-${oggi.getMonth()}-${oggi.getDate()}`; const unGiorno = 1000 * 60 * 60 * 24;
             if (oggi.getDate() === 13 && oggi.getMonth() === 6) lanciaNotificaTraguardo("Anniversario", dataOggiString);
@@ -599,6 +600,8 @@
             const traguardoID = nomeTraguardo + "_" + dataOggiString;
             if (!traguardiNotificatiOggi.includes(traguardoID)) { 
                 traguardiNotificatiOggi.push(traguardoID); 
+                localStorage.setItem('appiccolina_notifiche_traguardi', JSON.stringify(traguardiNotificatiOggi));
+                syncToSupabase('notifiche_traguardi', { items: traguardiNotificatiOggi });
                 setTimeout(() => { 
                     inviaNotificaGenerica(`Oggi festeggiamo: ${nomeTraguardo}! 🎉`, `traguardo_${traguardoID}`); 
                     if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
