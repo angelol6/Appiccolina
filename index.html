@@ -506,7 +506,6 @@
             if (r.id === 'roulette') { rouletteOpzioni = r.payload.options || []; localStorage.setItem('appiccolina_roulette', JSON.stringify(rouletteOpzioni)); disegnaRoulette(); disegnaPillole(); }
             if (r.id === 'traguardi') { localStorage.setItem('appiccolina_date', JSON.stringify(r.payload.items || [])); mostraTraguardiMisti(); }
             if (r.id === 'notifiche_traguardi') { traguardiNotificatiOggi = r.payload.items || []; localStorage.setItem('appiccolina_notifiche_traguardi', JSON.stringify(traguardiNotificatiOggi)); }
-            if (r.id === 'traguardi_builtin_fotos') { localStorage.setItem('appiccolina_foto_builtin', JSON.stringify(r.payload || {})); mostraTraguardiMisti(); }
         }).subscribe();
 
         function aggiornaUIFotoProfilo() {
@@ -830,20 +829,10 @@
             let proxMes = new Date(oggi.getFullYear(), oggi.getMonth(), 13); if (oggi.getDate() > 13) proxMes.setMonth(oggi.getMonth() + 1);
             let diffG = Math.ceil((new Date('2028-01-03T00:00:00').getTime() - oggi.getTime()) / unGiorno);
 
-            let builtinFotos = JSON.parse(localStorage.getItem('appiccolina_foto_builtin')) || {};
-            
-            let annDiff = Math.ceil((proxAnn.getTime() - oggi.getTime()) / unGiorno);
-            let annImgHtml = (annDiff <= 0) ? (builtinFotos['Anniversario'] ? `<div style="margin-top: 12px; position: relative;"><img src="${builtinFotos['Anniversario']}" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;" onclick="apriUploadFotoTraguardo('Anniversario', event)"></div>` : `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo('Anniversario', event)">📷 Aggiungi Foto</button></div>`) : '';
-
-            let mesDiff = Math.ceil((proxMes.getTime() - (oggi.getTime() > proxMes.getTime() ? proxMes.getTime() : oggi.getTime())) / unGiorno);
-            let mesImgHtml = (mesDiff <= 0) ? (builtinFotos['Mesiversario'] ? `<div style="margin-top: 12px; position: relative;"><img src="${builtinFotos['Mesiversario']}" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;" onclick="apriUploadFotoTraguardo('Mesiversario', event)"></div>` : `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo('Mesiversario', event)">📷 Aggiungi Foto</button></div>`) : '';
-
-            let gImgHtml = (diffG <= 0) ? (builtinFotos['2000 Giorni'] ? `<div style="margin-top: 12px; position: relative;"><img src="${builtinFotos['2000 Giorni']}" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;" onclick="apriUploadFotoTraguardo('2000 Giorni', event)"></div>` : `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo('2000 Giorni', event)">📷 Aggiungi Foto</button></div>`) : '';
-
             container.innerHTML += `
-                <li class="milestone-item"><div style="width: 100%;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="ms-info"><h4>Anniversario</h4><p>13 Luglio</p></div><div class="ms-days grad-step-1">${annDiff > 0 ? annDiff + " gg" : (annDiff === 0 ? "Oggi! 🎉" : "Passato")}</div></div>${annImgHtml}</div></li>
-                <li class="milestone-item"><div style="width: 100%;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="ms-info"><h4>Mesiversario</h4><p>Il 13 del mese</p></div><div class="ms-days grad-step-2">${mesDiff > 0 ? mesDiff + " gg" : (mesDiff === 0 ? "Oggi! 🎉" : "Passato")}</div></div>${mesImgHtml}</div></li>
-                <li class="milestone-item"><div style="width: 100%;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="ms-info"><h4>2000 Giorni</h4><p>3 Gennaio 2028</p></div><div class="ms-days grad-step-3">${diffG > 0 ? diffG + " gg" : "Traguardo Raggiunto!"}</div></div>${gImgHtml}</div></li>
+                <li class="milestone-item"><div class="ms-info"><h4>Anniversario</h4><p>13 Luglio</p></div><div class="ms-days grad-step-1">${Math.ceil((proxAnn.getTime() - oggi.getTime()) / unGiorno)} gg</div></li>
+                <li class="milestone-item"><div class="ms-info"><h4>Mesiversario</h4><p>Il 13 del mese</p></div><div class="ms-days grad-step-2">${Math.ceil((proxMes.getTime() - (oggi.getTime() > proxMes.getTime() ? proxMes.getTime() : oggi.getTime())) / unGiorno)} gg</div></li>
+                <li class="milestone-item"><div class="ms-info"><h4>2000 Giorni</h4><p>3 Gennaio 2028</p></div><div class="ms-days grad-step-3">${diffG > 0 ? diffG + " gg" : "Traguardo Raggiunto!"}</div></li>
             `;
 
             (JSON.parse(localStorage.getItem('appiccolina_date')) || []).forEach((item, index) => {
@@ -857,7 +846,7 @@
                     if (item.immagine) {
                         imgHtml = `<div style="margin-top: 12px; position: relative;"><img src="${item.immagine}" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;" onclick="apriUploadFotoTraguardo(${index}, event)"></div>`;
                     } else {
-                        imgHtml = `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo(${index}, event)">📷 Aggiungi Foto</button></div>`;
+                        imgHtml = `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo(${index}, event)">Aggiungi Foto</button></div>`;
                     }
                 }
                 
@@ -916,24 +905,15 @@
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    let base64Str = canvas.toDataURL('image/jpeg', 0.6);
+                    const base64Str = canvas.toDataURL('image/jpeg', 0.6);
                     
-                    if (typeof indiceTraguardoFoto === 'number') {
-                        let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
-                        if (salvate[indiceTraguardoFoto]) {
-                            salvate[indiceTraguardoFoto].immagine = base64Str;
-                            localStorage.setItem('appiccolina_date', JSON.stringify(salvate));
-                            syncToSupabase('traguardi', { items: salvate });
-                            mostraTraguardiMisti();
-                            inviaNotificaGenerica(`Ha aggiunto una foto al traguardo "${salvate[indiceTraguardoFoto].titolo}" 📸`);
-                        }
-                    } else {
-                        let builtinFotos = JSON.parse(localStorage.getItem('appiccolina_foto_builtin')) || {};
-                        builtinFotos[indiceTraguardoFoto] = base64Str;
-                        localStorage.setItem('appiccolina_foto_builtin', JSON.stringify(builtinFotos));
-                        syncToSupabase('traguardi_builtin_fotos', builtinFotos);
+                    let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
+                    if (salvate[indiceTraguardoFoto]) {
+                        salvate[indiceTraguardoFoto].immagine = base64Str;
+                        localStorage.setItem('appiccolina_date', JSON.stringify(salvate));
+                        syncToSupabase('traguardi', { items: salvate });
                         mostraTraguardiMisti();
-                        inviaNotificaGenerica(`Ha aggiunto una foto al traguardo "${indiceTraguardoFoto}" 📸`);
+                        inviaNotificaGenerica(`Ha aggiunto una foto al traguardo "${salvate[indiceTraguardoFoto].titolo}" 📸`);
                     }
                     indiceTraguardoFoto = null;
                     document.getElementById('input-foto-traguardo').value = '';
