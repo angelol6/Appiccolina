@@ -269,6 +269,8 @@
             <button class="btn-user btn-angelo" onclick="accedi('Angelo')">Sono Angelo</button>
         </div>
     </div>
+    
+    <input type="file" id="input-foto-traguardo" accept="image/*" style="display: none;" onchange="gestisciUploadFotoTraguardo(event)">
 
     <div id="main-app">
         <div class="header">
@@ -444,7 +446,7 @@
                 app_id: ONE_SIGNAL_APP_ID, 
                 target_channel: 'push', 
                 headings: { en: 'Appiccolina', it: 'Appiccolina' }, 
-                contents: { en: utenteAttuale + ': ' + messaggio, it: utenteAttuale + ': ' + messaggio },
+                contents: { en: utenteAttuale + ' ' + messaggio.charAt(0).toLowerCase() + messaggio.slice(1), it: utenteAttuale + ' ' + messaggio.charAt(0).toLowerCase() + messaggio.slice(1) },
                 url: 'https://angelol6.github.io/Appiccolina/',
                 web_push_topic: tipo ? tipo : (Date.now().toString() + Math.random().toString()),
                 collapse_id: tipo ? tipo : Date.now().toString()
@@ -545,8 +547,7 @@
                 userNameSpan.style.color = 'var(--angelo-blue)'; avatar.style.color = 'var(--angelo-blue)'; settingsUsername.style.color = 'var(--angelo-blue)'; settingsAvatar.style.color = 'var(--angelo-blue)'; ee1Testo.style.color = 'var(--angelo-blue)'; ee2Testo.style.color = 'var(--angelo-blue)'; loveInstruction.innerText = "Tocca il cuore per mandare amore a Simo"; greetingText.innerText = "Benvenuto,"; greetingHeart.innerHTML = heartSvg; greetingHeart.style.color = 'var(--angelo-blue)';
             }
 
-            if (utenteAttuale === 'Angelo') { document.getElementById('btn-edit-msg').style.display = 'block'; }
-            else { document.getElementById('btn-edit-msg').style.display = 'none'; }
+            document.getElementById('btn-edit-msg').style.display = 'block';
 
             const resMsg = await supabaseClient.from('app_data').select('payload').eq('id', 'custom_message').single();
             if (resMsg.data && resMsg.data.payload && !resMsg.data.payload.eliminato) { customMessageData = resMsg.data.payload; }
@@ -755,16 +756,8 @@
                         let target = utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo';
                         subMsg = "Frase attiva per " + target + ": \"" + customMessageData.testo + "\"";
                     } else {
-                        // Se l'utente che accede NON è l'autore (quindi è il destinatario):
-                        if (utenteCheAccede === 'Angelo') { // Solo per test: se Simo la invia ad Angelo
-                            msg = customMessageData.testo;
-                            auth = "da " + customMessageData.autore;
-                        } else {
-                            // Per Simo: Fino al 13 luglio NON vede nulla.
-                            // --- DA DECOMMENTARE IL 13 LUGLIO ---
-                            // msg = customMessageData.testo;
-                            // auth = "da " + customMessageData.autore;
-                        }
+                        msg = customMessageData.testo;
+                        auth = "da " + customMessageData.autore;
                     }
                 }
             }
@@ -844,7 +837,28 @@
                 let diff = Math.ceil((target.getTime() - oggiReset.getTime()) / unGiorno);
                 const li = document.createElement('li'); li.className = 'milestone-item';
                 let authTag = item.autore ? `<span style="font-size: 11px; color: var(--text-gray); display: block; margin-top: 3px;">(Aggiunto da ${item.autore})</span>` : '';
-                li.innerHTML = `<div class="ms-info"><h4>${item.titolo}</h4><p>${target.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}${authTag}</p></div><div style="display: flex; align-items: center; gap: 12px;"><div class="ms-days grad-step-2">${diff > 0 ? diff + " gg" : (diff === 0 ? "Oggi! 🎉" : "Passato")}</div><div class="btn-delete-date" onclick="richiediConfermaEliminazione(${index}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div></div>`;
+                
+                let imgHtml = '';
+                if (diff <= 0) {
+                    if (item.immagine) {
+                        imgHtml = `<div style="margin-top: 12px; position: relative;"><img src="${item.immagine}" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;" onclick="apriUploadFotoTraguardo(${index}, event)"></div>`;
+                    } else {
+                        imgHtml = `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo(${index}, event)">📷 Aggiungi Foto</button></div>`;
+                    }
+                }
+                
+                li.innerHTML = `
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="ms-info"><h4>${item.titolo}</h4><p>${target.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}${authTag}</p></div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="ms-days grad-step-2">${diff > 0 ? diff + " gg" : (diff === 0 ? "Oggi! 🎉" : "Passato")}</div>
+                                <div class="btn-delete-date" onclick="richiediConfermaEliminazione(${index}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
+                            </div>
+                        </div>
+                        ${imgHtml}
+                    </div>
+                `;
                 container.appendChild(li);
             });
         }
@@ -861,6 +875,50 @@
         }
         function richiediConfermaEliminazione(index, event) { event.stopPropagation(); indiceDataDaEliminare = index; apriModal('modal-confirm-delete'); }
         function eseguiEliminazioneData() { if (indiceDataDaEliminare !== null) { let s = JSON.parse(localStorage.getItem('appiccolina_date')) || []; s.splice(indiceDataDaEliminare, 1); localStorage.setItem('appiccolina_date', JSON.stringify(s)); syncToSupabase('traguardi', { items: s }); mostraTraguardiMisti(); indiceDataDaEliminare = null; } chiudiModal('modal-confirm-delete'); }
+
+        let indiceTraguardoFoto = null;
+        function apriUploadFotoTraguardo(index, event) {
+            event.stopPropagation();
+            indiceTraguardoFoto = index;
+            document.getElementById('input-foto-traguardo').click();
+        }
+
+        function gestisciUploadFotoTraguardo(event) {
+            const file = event.target.files[0];
+            if (!file || indiceTraguardoFoto === null) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxW = 500;
+                    if (width > maxW) {
+                        height = Math.floor(height * (maxW / width));
+                        width = maxW;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const base64Str = canvas.toDataURL('image/jpeg', 0.6);
+                    
+                    let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
+                    if (salvate[indiceTraguardoFoto]) {
+                        salvate[indiceTraguardoFoto].immagine = base64Str;
+                        localStorage.setItem('appiccolina_date', JSON.stringify(salvate));
+                        syncToSupabase('traguardi', { items: salvate });
+                        mostraTraguardiMisti();
+                        inviaNotificaGenerica(`Ha aggiunto una foto al traguardo "${salvate[indiceTraguardoFoto].titolo}" 📸`);
+                    }
+                    indiceTraguardoFoto = null;
+                    document.getElementById('input-foto-traguardo').value = '';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
 
         function creaEasterEgg(id, cb) { let c = 0, t; document.getElementById(id).addEventListener('click', () => { c++; clearTimeout(t); if(c===3){ cb(); c=0; } else t=setTimeout(()=>{c=0;},1000); }); }
         creaEasterEgg('easter-egg-1', () => apriModal('modal-ee1'));
