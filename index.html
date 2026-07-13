@@ -270,8 +270,6 @@
         </div>
     </div>
     
-    <input type="file" id="input-foto-traguardo" accept="image/*" style="display: none;" onchange="gestisciUploadFotoTraguardo(event)">
-
     <div id="main-app">
         <div class="header">
             <h1 style="margin: 0; display: flex; align-items: center; line-height: 1;"><span id="greeting-text" class="greeting-base" style="margin-right: 10px;">Benvenuto,</span><span id="user-name" class="greeting-name">Nome</span><span id="greeting-heart" onclick="toggleMagicHeart()"></span></h1>
@@ -835,7 +833,12 @@
                 <li class="milestone-item"><div class="ms-info"><h4>2000 Giorni</h4><p>3 Gennaio 2028</p></div><div class="ms-days grad-step-3">${diffG > 0 ? diffG + " gg" : "Traguardo Raggiunto!"}</div></li>
             `;
 
-            (JSON.parse(localStorage.getItem('appiccolina_date')) || []).forEach((item, index) => {
+            let dates = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
+            let changed = false;
+            dates.forEach(d => { if (d.immagine && !d.immagini) { d.immagini = [d.immagine]; delete d.immagine; changed = true; } });
+            if (changed) { localStorage.setItem('appiccolina_date', JSON.stringify(dates)); syncToSupabase('traguardi', { items: dates }); }
+
+            dates.forEach((item, index) => {
                 const target = new Date(item.data); target.setHours(0,0,0,0); const oggiReset = new Date(); oggiReset.setHours(0,0,0,0);
                 let diff = Math.ceil((target.getTime() - oggiReset.getTime()) / unGiorno);
                 const li = document.createElement('li'); li.className = 'milestone-item';
@@ -843,11 +846,8 @@
                 
                 let imgHtml = '';
                 if (diff <= 0) {
-                    if (item.immagine) {
-                        imgHtml = `<div style="margin-top: 12px; position: relative;"><img src="${item.immagine}" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: block;" onclick="apriUploadFotoTraguardo(${index}, event)"></div>`;
-                    } else {
-                        imgHtml = `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriUploadFotoTraguardo(${index}, event)">Aggiungi Foto</button></div>`;
-                    }
+                    let btnText = (item.immagini && item.immagini.length > 0) ? `🖼️ Apri Album (${item.immagini.length}/4)` : `📷 Crea Album`;
+                    imgHtml = `<div style="margin-top: 12px;"><button class="btn-user" style="font-size: 13px; padding: 6px 12px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px;" onclick="apriAlbumTraguardo(${index}, event)">${btnText}</button></div>`;
                 }
                 
                 li.innerHTML = `
@@ -879,16 +879,54 @@
         function richiediConfermaEliminazione(index, event) { event.stopPropagation(); indiceDataDaEliminare = index; apriModal('modal-confirm-delete'); }
         function eseguiEliminazioneData() { if (indiceDataDaEliminare !== null) { let s = JSON.parse(localStorage.getItem('appiccolina_date')) || []; s.splice(indiceDataDaEliminare, 1); localStorage.setItem('appiccolina_date', JSON.stringify(s)); syncToSupabase('traguardi', { items: s }); mostraTraguardiMisti(); indiceDataDaEliminare = null; } chiudiModal('modal-confirm-delete'); }
 
-        let indiceTraguardoFoto = null;
-        function apriUploadFotoTraguardo(index, event) {
+        let indiceAlbumAttivo = null;
+        function apriAlbumTraguardo(index, event) {
             event.stopPropagation();
-            indiceTraguardoFoto = index;
-            document.getElementById('input-foto-traguardo').click();
+            indiceAlbumAttivo = index;
+            renderAlbumTraguardo();
+            apriModal('modal-album-traguardo');
+        }
+
+        function renderAlbumTraguardo() {
+            if (indiceAlbumAttivo === null) return;
+            let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
+            let item = salvate[indiceAlbumAttivo];
+            if (!item) return;
+            document.getElementById('album-traguardo-titolo').innerText = item.titolo;
+            
+            const grid = document.getElementById('album-grid');
+            grid.innerHTML = '';
+            
+            let imgs = item.immagini || [];
+            imgs.forEach((b64, i) => {
+                grid.innerHTML += `<div style="position: relative; padding-top: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                    <img src="${b64}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; backdrop-filter: blur(2px);" onclick="eliminaFotoAlbum(${i})">✕</div>
+                </div>`;
+            });
+            
+            if (imgs.length >= 4) {
+                document.getElementById('btn-upload-album').style.display = 'none';
+            } else {
+                document.getElementById('btn-upload-album').style.display = 'block';
+            }
+        }
+
+        function eliminaFotoAlbum(fotoIndex) {
+            let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
+            let item = salvate[indiceAlbumAttivo];
+            if (item && item.immagini) {
+                item.immagini.splice(fotoIndex, 1);
+                localStorage.setItem('appiccolina_date', JSON.stringify(salvate));
+                syncToSupabase('traguardi', { items: salvate });
+                renderAlbumTraguardo();
+                mostraTraguardiMisti();
+            }
         }
 
         function gestisciUploadFotoTraguardo(event) {
             const file = event.target.files[0];
-            if (!file || indiceTraguardoFoto === null) return;
+            if (!file || indiceAlbumAttivo === null) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -908,14 +946,18 @@
                     const base64Str = canvas.toDataURL('image/jpeg', 0.6);
                     
                     let salvate = JSON.parse(localStorage.getItem('appiccolina_date')) || [];
-                    if (salvate[indiceTraguardoFoto]) {
-                        salvate[indiceTraguardoFoto].immagine = base64Str;
-                        localStorage.setItem('appiccolina_date', JSON.stringify(salvate));
-                        syncToSupabase('traguardi', { items: salvate });
-                        mostraTraguardiMisti();
-                        inviaNotificaGenerica(`Ha aggiunto una foto al traguardo "${salvate[indiceTraguardoFoto].titolo}" 📸`);
+                    let item = salvate[indiceAlbumAttivo];
+                    if (item) {
+                        if (!item.immagini) item.immagini = [];
+                        if (item.immagini.length < 4) {
+                            item.immagini.push(base64Str);
+                            localStorage.setItem('appiccolina_date', JSON.stringify(salvate));
+                            syncToSupabase('traguardi', { items: salvate });
+                            renderAlbumTraguardo();
+                            mostraTraguardiMisti();
+                            inviaNotificaGenerica(`Ha aggiunto una foto all'album del traguardo "${item.titolo}" 📸`);
+                        }
                     }
-                    indiceTraguardoFoto = null;
                     document.getElementById('input-foto-traguardo').value = '';
                 };
                 img.src = e.target.result;
