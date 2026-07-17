@@ -73,7 +73,7 @@
         .btn-switch-timer { color: var(--text-gray); cursor: pointer; padding: 4px; border-radius: 50%; transition: background 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; }
         .btn-switch-timer:active { background: rgba(0,0,0,0.05); }
         .btn-switch-timer svg { width: 16px; height: 16px; }
-        .widget-quote { text-align: center; padding: 25px 20px; background: rgba(255,255,255,0.9); }
+        .widget-quote { text-align: center; padding: 35px 20px 15px 20px; background: rgba(255,255,255,0.9); }
         .quote-text { font-size: 22px; font-weight: 500; margin: 0; color: var(--text-main); }
         .quote-author { font-size: 13px; color: var(--text-gray); margin-top: 8px; display: block; }
         .timer-display { display: flex; justify-content: space-between; align-items: center; }
@@ -796,7 +796,7 @@
                     if (customMessages[partner].risposta) {
                         subMsg = "Hai risposto: \"" + customMessages[partner].risposta + "\"";
                     } else {
-                        btnReplyHtml = `<div style="margin-top:10px;"><button class="btn-user" style="font-size: 12px; padding: 4px 10px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px; cursor: pointer;" onclick="apriRispondiMessaggio()">💬 Rispondi</button></div>`;
+                        btnReplyHtml = `<div style="margin-top:10px;"><button class="btn-user" style="font-size: 12px; padding: 4px 10px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px; cursor: pointer;" onclick="apriRispondiMessaggio()">Rispondi</button></div>`;
                     }
                 }
             }
