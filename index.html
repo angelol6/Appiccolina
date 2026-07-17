@@ -222,6 +222,17 @@
         </div>
     </div>
 
+    <div id="modal-reply-msg" class="modal-overlay" onclick="chiudiModal('modal-reply-msg')">
+        <div class="modal-card" style="text-align: left;" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:18px; color: var(--text-gray); font-weight:500;">Rispondi</h3>
+            <textarea id="reply-msg-testo" class="modal-input" placeholder="Scrivi la tua risposta..." style="resize:none; height:80px;"></textarea>
+            <div class="modal-btn-row">
+                <button class="modal-btn" onclick="inviaRispostaMessaggio()" style="background: var(--union-gradient); color: white;">Invia</button>
+                <button class="modal-btn" onclick="chiudiModal('modal-reply-msg')" style="background: rgba(0,0,0,0.05); color: var(--text-gray);">Annulla</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-settings" class="modal-overlay" onclick="chiudiModal('modal-settings')">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h3 style="margin-top:0; margin-bottom:20px; font-size:18px; font-weight:500;">Impostazioni</h3>
@@ -365,7 +376,7 @@
         const ONE_SIGNAL_API_KEY = 'os_v2_app_' + 'wybvutcnxnbvpfhvfrvpvcxmkfd3ajomjmeutpmgsayrsinmorsfa4kxwti2t4cmskijctzphk2emuc2pax7vfyznq44zwfogcrnosa';
 
         /* --- STATO GLOBALE APP --- */
-        let utenteAttuale = ''; let indiceDataDaEliminare = null; let isAlternateTimerView = false; let realTimeInterval; let customMessageData = null;
+        let utenteAttuale = ''; let indiceDataDaEliminare = null; let isAlternateTimerView = false; let realTimeInterval; let customMessages = { Angelo: null, Simo: null };
 
         /* --- SINCRONIZZAZIONE SUPABASE & MERGE INTELLIGENTE --- */
         async function syncToSupabase(id, payload) {
@@ -513,11 +524,11 @@
                   const lastBurst = localStorage.getItem('appiccolina_last_cloud_burst');
                   if (lastBurst !== record.payload.timestamp.toString()) { localStorage.setItem('appiccolina_last_cloud_burst', record.payload.timestamp.toString()); creaCuoriciniVolanti(); }
               }
-              if (record && record.id === 'custom_message') { 
-                  if (record.payload && !record.payload.eliminato) customMessageData = record.payload; 
-                  else customMessageData = null;
-                  impostaMessaggioOrario(utenteAttuale); 
-              }
+              if (record && record.id === 'custom_messages_v2') {
+                    if (record.payload) customMessages = record.payload;
+                    else customMessages = { Angelo: null, Simo: null };
+                    impostaMessaggioOrario(utenteAttuale);
+                }
         }).subscribe();
 
         // Listener Realtime per dati condivisi (Coupon, Liste, Roulette, Traguardi)
@@ -573,8 +584,8 @@
 
             document.getElementById('btn-edit-msg').style.display = 'block';
 
-            const resMsg = await supabaseClient.from('app_data').select('payload').eq('id', 'custom_message').single();
-            if (resMsg.data && resMsg.data.payload && !resMsg.data.payload.eliminato) { customMessageData = resMsg.data.payload; }
+            const resMsg = await supabaseClient.from('app_data').select('payload').eq('id', 'custom_messages_v2').single();
+            if (resMsg.data && resMsg.data.payload) { customMessages = resMsg.data.payload; }
 
             aggiornaUIFotoProfilo(); document.getElementById('messaggio-orario-container').style.display = 'block'; impostaMessaggioOrario(nome); calcolaTempoTrascorso();
             realTimeInterval = setInterval(() => { calcolaTempoTrascorso(); controllaTraguardiRaggiunti(); impostaMessaggioOrario(utenteAttuale); }, 60000);
@@ -772,27 +783,44 @@
             
             let auth = "da " + (utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo');
             let subMsg = "";
+            let btnReplyHtml = "";
+            const partner = utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo';
+            let now = new Date().getTime();
 
-            if (customMessageData && customMessageData.testo) {
-                let now = new Date().getTime();
-                let start = new Date(customMessageData.inizio).getTime();
-                let end = new Date(customMessageData.fine).getTime();
+            if (customMessages[partner] && customMessages[partner].testo) {
+                let start = new Date(customMessages[partner].inizio).getTime();
+                let end = new Date(customMessages[partner].fine).getTime();
                 if (now >= start && now <= end) {
-                    if (customMessageData.autore === utenteCheAccede) {
-                        let target = utenteCheAccede === 'Simo' ? 'Angelo' : 'Simo';
-                        subMsg = "Frase attiva per " + target + ": \"" + customMessageData.testo + "\"";
+                    msg = customMessages[partner].testo;
+                    auth = "da " + partner;
+                    if (customMessages[partner].risposta) {
+                        subMsg = "Hai risposto: \"" + customMessages[partner].risposta + "\"";
                     } else {
-                        msg = customMessageData.testo;
-                        auth = "da " + customMessageData.autore;
+                        btnReplyHtml = `<div style="margin-top:10px;"><button class="btn-user" style="font-size: 12px; padding: 4px 10px; background: rgba(0,0,0,0.05); color: var(--text-main); border: none; border-radius: 12px; cursor: pointer;" onclick="apriRispondiMessaggio()">💬 Rispondi</button></div>`;
                     }
                 }
             }
+
+            let myMsgStatus = "";
+            if (customMessages[utenteCheAccede] && customMessages[utenteCheAccede].testo) {
+                let start = new Date(customMessages[utenteCheAccede].inizio).getTime();
+                let end = new Date(customMessages[utenteCheAccede].fine).getTime();
+                if (now >= start && now <= end) {
+                    myMsgStatus = "Frase attiva per " + partner + ": \"" + customMessages[utenteCheAccede].testo + "\"";
+                    if (customMessages[utenteCheAccede].risposta) {
+                        myMsgStatus = partner + " ha risposto: \"" + customMessages[utenteCheAccede].risposta + "\"";
+                    }
+                }
+            }
+
+            if (myMsgStatus && !subMsg) subMsg = myMsgStatus;
+            else if (myMsgStatus && subMsg) subMsg = subMsg + "<br><br>" + myMsgStatus;
 
             document.getElementById('testo-messaggio').innerText = msg; 
             document.getElementById('autore-messaggio').innerText = auth;
             
             const subElem = document.getElementById('sub-messaggio');
-            if (subMsg) { subElem.innerText = subMsg; subElem.style.display = 'block'; } else { subElem.style.display = 'none'; }
+            if (subMsg || btnReplyHtml) { subElem.innerHTML = (subMsg ? subMsg : "") + btnReplyHtml; subElem.style.display = 'block'; } else { subElem.style.display = 'none'; }
         }
 
         function apriEditMessaggio() {
@@ -801,10 +829,11 @@
             let end = new Date(now.getTime() + 2*3600*1000);
             let endStr = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
-            if (customMessageData) {
-                document.getElementById('custom-msg-testo').value = customMessageData.testo || '';
-                document.getElementById('custom-msg-inizio').value = startStr;
-                document.getElementById('custom-msg-fine').value = endStr;
+            let myData = customMessages[utenteAttuale];
+            if (myData && myData.testo) {
+                document.getElementById('custom-msg-testo').value = myData.testo || '';
+                document.getElementById('custom-msg-inizio').value = myData.inizio || startStr;
+                document.getElementById('custom-msg-fine').value = myData.fine || endStr;
             } else {
                 document.getElementById('custom-msg-testo').value = '';
                 document.getElementById('custom-msg-inizio').value = startStr;
@@ -819,18 +848,48 @@
             let fine = document.getElementById('custom-msg-fine').value;
             if (!testo || !inizio || !fine) return mostraAlertPersonalizzato('Compila tutti i campi!');
             if (new Date(fine) <= new Date(inizio)) return mostraAlertPersonalizzato('La data di fine deve essere dopo la data di inizio!');
-            let dataObj = { testo: testo, inizio: inizio, fine: fine, autore: utenteAttuale };
-            customMessageData = dataObj;
+            
+            let dataObj = { testo: testo, inizio: inizio, fine: fine, risposta: null };
+            customMessages[utenteAttuale] = dataObj;
             chiudiModal('modal-custom-msg');
             impostaMessaggioOrario(utenteAttuale);
-            await syncToSupabase('custom_message', dataObj);
+            await syncToSupabase('custom_messages_v2', customMessages);
+            
+            const partner = utenteAttuale === 'Simo' ? 'Angelo' : 'Simo';
+            inviaNotificaGenerica(`Ha attivato una frase personalizzata per te!`);
+            if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
+                inviaNotificaPush(partner, `Ti ha dedicato una frase speciale!`, 'custom_msg');
+            }
         }
 
         async function eliminaCustomMsg() {
-            customMessageData = null;
+            customMessages[utenteAttuale] = null;
             chiudiModal('modal-custom-msg');
             impostaMessaggioOrario(utenteAttuale);
-            await syncToSupabase('custom_message', { eliminato: true });
+            await syncToSupabase('custom_messages_v2', customMessages);
+        }
+
+        function apriRispondiMessaggio() {
+            document.getElementById('reply-msg-testo').value = '';
+            apriModal('modal-reply-msg');
+        }
+        
+        async function inviaRispostaMessaggio() {
+            let testo = document.getElementById('reply-msg-testo').value.trim();
+            if(!testo) return;
+            
+            const partner = utenteAttuale === 'Simo' ? 'Angelo' : 'Simo';
+            if (customMessages[partner] && customMessages[partner].testo) {
+                customMessages[partner].risposta = testo;
+                chiudiModal('modal-reply-msg');
+                impostaMessaggioOrario(utenteAttuale);
+                await syncToSupabase('custom_messages_v2', customMessages);
+                
+                inviaNotificaGenerica(`Ha risposto alla tua frase personalizzata!`);
+                if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
+                    inviaNotificaPush(partner, `Ha risposto alla tua frase! Vai a leggere`, 'custom_msg_reply');
+                }
+            }
         }
 
         function toggleTimerView(event) { event.stopPropagation(); isAlternateTimerView = !isAlternateTimerView; calcolaTempoTrascorso(); }
