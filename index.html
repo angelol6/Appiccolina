@@ -856,10 +856,7 @@
             await syncToSupabase('custom_messages_v2', customMessages);
             
             const partner = utenteAttuale === 'Simo' ? 'Angelo' : 'Simo';
-            inviaNotificaGenerica(`Ha attivato una frase personalizzata per te!`);
-            if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
-                inviaNotificaPush(partner, `Ti ha dedicato una frase speciale!`, 'custom_msg');
-            }
+            inviaNotificaGenerica(`Ha attivato una frase personalizzata per te!`, 'custom_msg');
         }
 
         async function eliminaCustomMsg() {
@@ -885,10 +882,7 @@
                 impostaMessaggioOrario(utenteAttuale);
                 await syncToSupabase('custom_messages_v2', customMessages);
                 
-                inviaNotificaGenerica(`Ha risposto alla tua frase personalizzata!`);
-                if (ONE_SIGNAL_APP_ID && ONE_SIGNAL_APP_ID.length > 20 && ONE_SIGNAL_APP_ID !== 'APP_ID_ONESIGNAL') {
-                    inviaNotificaPush(partner, `Ha risposto alla tua frase! Vai a leggere`, 'custom_msg_reply');
-                }
+                inviaNotificaGenerica(`Ha risposto alla tua frase personalizzata! Vai a leggere`, 'custom_msg_reply');
             }
         }
 

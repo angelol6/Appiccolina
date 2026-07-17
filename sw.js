@@ -1,6 +1,6 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
-const CACHE_NAME = 'appiccolina-v34';
+const CACHE_NAME = 'appiccolina-v35';
 
 // Installa e forza l'attivazione immediata
 self.addEventListener('install', (event) => {
